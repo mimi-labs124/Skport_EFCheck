@@ -12,5 +12,4 @@ if exist ".venv\Scripts\python.exe" (
     py -3 sign_in.py %*
   )
 )
-pause
 endlocal

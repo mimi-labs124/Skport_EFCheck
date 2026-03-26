@@ -93,7 +93,7 @@ Main settings:
 - [`install_efcheck.bat`](./install_efcheck.bat): guided setup for installation, session capture, and task registration
 - [`setup_windows.bat`](./setup_windows.bat): one-click Windows setup
 - [`capture_session.bat`](./capture_session.bat): one-click session capture
-- [`run_signin.bat`](./run_signin.bat): one-click manual run
+- [`run_signin.bat`](./run_signin.bat): manual/background run entry used by Task Scheduler
 - [`register_logon_task.bat`](./register_logon_task.bat): one-click scheduled-task wrapper
 - [`register_logon_task.ps1`](./register_logon_task.ps1): Task Scheduler helper
 - [`tools/package_windows_release.ps1`](./tools/package_windows_release.ps1): build a Windows zip release

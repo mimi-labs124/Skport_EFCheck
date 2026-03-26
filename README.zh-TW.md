@@ -93,7 +93,7 @@ copy config\settings.example.json config\settings.json
 - [`install_efcheck.bat`](./install_efcheck.bat)：引導式完整安裝流程
 - [`setup_windows.bat`](./setup_windows.bat)：Windows 一鍵安裝
 - [`capture_session.bat`](./capture_session.bat)：一鍵擷取 session
-- [`run_signin.bat`](./run_signin.bat)：一鍵手動執行
+- [`run_signin.bat`](./run_signin.bat)：手動或背景排程共用的執行入口
 - [`register_logon_task.bat`](./register_logon_task.bat)：一鍵註冊排程包裝器
 - [`register_logon_task.ps1`](./register_logon_task.ps1)：工作排程註冊腳本
 - [`tools/package_windows_release.ps1`](./tools/package_windows_release.ps1)：產出 Windows zip 發佈包
