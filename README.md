@@ -62,6 +62,8 @@ powershell -ExecutionPolicy Bypass -File .\register_logon_task.ps1
 
 The helper adds a short startup delay before running the sign-in command.
 
+If PowerShell script execution is blocked on your machine, use the batch wrapper scripts instead of calling `.ps1` files directly.
+
 ## Configuration
 
 Copy the sample config if needed:
