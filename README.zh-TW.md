@@ -56,6 +56,8 @@ run_signin.bat
 powershell -ExecutionPolicy Bypass -File .\register_logon_task.ps1
 ```
 
+如果當前不是管理員權限，這個腳本現在會自動重新開啟自己，並跳出 UAC 要求授權。
+
 這個腳本會在登入後先延遲一小段時間，再執行簽到命令。
 
 ## 設定

@@ -5,6 +5,36 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Test-IsAdministrator {
+    $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-IsAdministrator)) {
+    $selfPath = $MyInvocation.MyCommand.Path
+    $elevatedArguments = @(
+        "-NoProfile"
+        "-ExecutionPolicy"
+        "Bypass"
+        "-File"
+        "`"$selfPath`""
+        "-TaskName"
+        "`"$TaskName`""
+        "-DelaySeconds"
+        $DelaySeconds
+    )
+
+    try {
+        Start-Process -FilePath "powershell.exe" -ArgumentList $elevatedArguments -Verb RunAs | Out-Null
+        Write-Host "Elevation requested. Approve the UAC prompt to register the scheduled task."
+        exit 0
+    }
+    catch {
+        throw "Administrator permission is required to register the scheduled task."
+    }
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $runnerPath = Join-Path $scriptRoot "run_signin.bat"
 
@@ -29,3 +59,4 @@ Register-ScheduledTask `
     -Force
 
 Write-Host "Registered task: $TaskName"
+PAUSE

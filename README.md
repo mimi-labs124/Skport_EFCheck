@@ -56,6 +56,8 @@ Register a Windows Task Scheduler entry in an elevated PowerShell window:
 powershell -ExecutionPolicy Bypass -File .\register_logon_task.ps1
 ```
 
+If the script is not already running as administrator, it now relaunches itself and asks for UAC approval automatically.
+
 The helper adds a short delay after logon before launching the sign-in command.
 
 ## Configuration
