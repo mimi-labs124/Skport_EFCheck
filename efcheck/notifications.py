@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 
 from efcheck.statuses import NOTIFY_STATUSES
@@ -16,6 +17,9 @@ def notify_status(status: str, title: str, message: str) -> None:
 
 
 def show_windows_notification(title: str, message: str) -> None:
+    powershell_executable = shutil.which("powershell") or shutil.which("pwsh")
+    if not powershell_executable:
+        return
     escaped_title = title.replace("'", "''")
     escaped_message = message.replace("'", "''")
     command = (
@@ -30,16 +34,19 @@ def show_windows_notification(title: str, message: str) -> None:
         "Start-Sleep -Seconds 6;"
         "$notify.Dispose();"
     ).format(title=escaped_title, message=escaped_message)
-    subprocess.run(
-        [
-            "powershell",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            command,
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        subprocess.run(
+            [
+                powershell_executable,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                command,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return

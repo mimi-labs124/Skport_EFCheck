@@ -30,7 +30,11 @@ def main() -> int:
 
     try:
         settings = load_settings(config_path)
-        now = datetime.now(load_timezone(settings["timezone"]))
+        try:
+            timezone = load_timezone(settings["timezone"])
+        except RuntimeError as exc:
+            raise ValueError(str(exc)) from exc
+        now = datetime.now(timezone)
         state_path = resolve_path(config_path, settings["state_path"])
         log_dir = resolve_path(config_path, settings["log_dir"])
         profile_dir = resolve_path(config_path, settings["browser_profile_dir"])
@@ -255,11 +259,12 @@ def run_browser_sign_in(
                 pass
             refreshed_state = derive_attendance_state(attendance_payload)
 
-            return final_signin_status(
+            status, message = final_signin_status(
                 day_number=state.day_number or 0,
                 refreshed_state=refreshed_state.status,
                 post_seen=post_seen,
             )
+            return message, status
         except PlaywrightTimeoutError:
             if page_looks_logged_out(page):
                 return (
