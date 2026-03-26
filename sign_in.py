@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 import json
 import sys
-from zoneinfo import ZoneInfo
 
 from efcheck.attendance_state import derive_attendance_state
 from efcheck.attendance_response import is_attendance_response
@@ -14,6 +13,7 @@ from efcheck.daily_gate import RunGateState, load_state, mark_attempt, should_ru
 from efcheck.notifications import notify_status
 from efcheck.result_helpers import final_signin_status
 from efcheck.statuses import ALREADY_DONE, ERROR, READY_TO_SIGN, SESSION_EXPIRED, SUCCESS, UNKNOWN
+from efcheck.time_helpers import load_timezone
 
 
 DEFAULT_CONFIG = Path("config/settings.json")
@@ -26,7 +26,7 @@ def main() -> int:
 
     try:
         settings = load_settings(config_path)
-        now = datetime.now(ZoneInfo(settings["timezone"]))
+        now = datetime.now(load_timezone(settings["timezone"]))
         state_path = resolve_path(config_path, settings["state_path"])
         log_dir = resolve_path(config_path, settings["log_dir"])
         profile_dir = resolve_path(config_path, settings["browser_profile_dir"])

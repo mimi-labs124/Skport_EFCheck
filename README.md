@@ -30,6 +30,8 @@ It uses a dedicated Playwright browser profile, keeps your saved login session i
 setup_windows.bat
 ```
 
+If you update from an older install, run `setup_windows.bat` again so `tzdata` is installed too.
+
 2. Capture your session once:
 
 ```bat
