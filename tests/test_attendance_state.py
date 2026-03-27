@@ -45,6 +45,16 @@ class AttendanceStateTests(unittest.TestCase):
 
         self.assertEqual(result.status, "UNKNOWN")
 
+    def test_unknown_when_payload_root_is_not_object(self) -> None:
+        result = derive_attendance_state([])
+
+        self.assertEqual(result.status, "UNKNOWN")
+
+    def test_unknown_when_data_is_not_object(self) -> None:
+        result = derive_attendance_state({"data": []})
+
+        self.assertEqual(result.status, "UNKNOWN")
+
 
 if __name__ == "__main__":
     unittest.main()

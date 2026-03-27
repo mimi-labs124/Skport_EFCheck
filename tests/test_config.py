@@ -30,6 +30,28 @@ class ConfigTests(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 load_runtime_settings(config_path, "https://example.com")
 
+    def test_load_runtime_settings_rejects_nonpositive_timeout(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "settings.json"
+            config_path.write_text(
+                json.dumps({"timeout_seconds": 0}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(ConfigError):
+                load_runtime_settings(config_path, "https://example.com")
+
+    def test_load_runtime_settings_rejects_nonpositive_max_attempts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "settings.json"
+            config_path.write_text(
+                json.dumps({"max_attempts_per_day": 0}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(ConfigError):
+                load_runtime_settings(config_path, "https://example.com")
+
 
 if __name__ == "__main__":
     unittest.main()

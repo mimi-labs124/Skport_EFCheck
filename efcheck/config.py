@@ -40,10 +40,15 @@ def load_runtime_settings(config_path: Path, default_url: str) -> RuntimeSetting
         ),
         browser_channel=_parse_string(data.get("browser_channel", ""), field_name="browser_channel"),
         headless=_parse_bool(data.get("headless", True), field_name="headless"),
-        timeout_seconds=_parse_int(data.get("timeout_seconds", 20), field_name="timeout_seconds"),
+        timeout_seconds=_parse_int(
+            data.get("timeout_seconds", 20),
+            field_name="timeout_seconds",
+            minimum=1,
+        ),
         max_attempts_per_day=_parse_int(
             data.get("max_attempts_per_day", 2),
             field_name="max_attempts_per_day",
+            minimum=1,
         ),
     )
 
@@ -67,7 +72,9 @@ def _parse_bool(value: object, *, field_name: str) -> bool:
     raise ConfigError(f"{field_name} must be true or false, not {value!r}.")
 
 
-def _parse_int(value: object, *, field_name: str) -> int:
+def _parse_int(value: object, *, field_name: str, minimum: int | None = None) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise ConfigError(f"{field_name} must be an integer, not {value!r}.")
+    if minimum is not None and value < minimum:
+        raise ConfigError(f"{field_name} must be >= {minimum}, not {value!r}.")
     return value

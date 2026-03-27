@@ -37,6 +37,12 @@ def load_state(state_path: Path) -> RunGateState:
         data = json.loads(state_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise StateFileError(f"Could not parse state file at {state_path}: {exc.msg}.") from exc
+
+    if not isinstance(data, dict):
+        raise StateFileError(
+            f"State file at {state_path} must contain a JSON object, not {type(data).__name__}."
+        )
+
     attempts_today = data.get("attempts_today")
     if attempts_today is None and data.get("last_attempt_date") and data.get("last_status"):
         attempts_today = 1

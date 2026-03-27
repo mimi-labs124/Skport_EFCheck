@@ -77,6 +77,14 @@ class DailyGateTests(unittest.TestCase):
             with self.assertRaises(StateFileError):
                 should_run_today(state_path, "2026-03-22")
 
+    def test_load_state_raises_state_file_error_for_nondict_json(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / "state.json"
+            state_path.write_text("[]", encoding="utf-8")
+
+            with self.assertRaises(StateFileError):
+                should_run_today(state_path, "2026-03-22")
+
 
 if __name__ == "__main__":
     unittest.main()

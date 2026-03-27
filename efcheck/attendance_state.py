@@ -13,13 +13,21 @@ class AttendanceState:
 
 
 def derive_attendance_state(payload: dict) -> AttendanceState:
-    calendar = payload.get("data", {}).get("calendar", [])
-    if not calendar:
+    if not isinstance(payload, dict):
         return AttendanceState(status=UNKNOWN, day_number=None, available_count=0)
+
+    data = payload.get("data", {})
+    if not isinstance(data, dict):
+        return AttendanceState(status=UNKNOWN, day_number=None, available_count=0)
+
+    calendar = data.get("calendar", [])
+    if not isinstance(calendar, list) or not calendar:
+        return AttendanceState(status=UNKNOWN, day_number=None, available_count=0)
+
     available_indexes = [
         index + 1
         for index, item in enumerate(calendar)
-        if item.get("available") and not item.get("done")
+        if isinstance(item, dict) and item.get("available") and not item.get("done")
     ]
     if available_indexes:
         return AttendanceState(
