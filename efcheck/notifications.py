@@ -10,16 +10,16 @@ def should_notify_status(status: str) -> bool:
     return status in NOTIFY_STATUSES
 
 
-def notify_status(status: str, title: str, message: str) -> None:
+def notify_status(status: str, title: str, message: str) -> str | None:
     if not should_notify_status(status):
-        return
-    show_windows_notification(title, message)
+        return None
+    return show_windows_notification(title, message)
 
 
-def show_windows_notification(title: str, message: str) -> None:
+def show_windows_notification(title: str, message: str) -> str | None:
     powershell_executable = shutil.which("powershell") or shutil.which("pwsh")
     if not powershell_executable:
-        return
+        return "Notification skipped: no PowerShell executable was found."
     escaped_title = title.replace("'", "''")
     escaped_message = message.replace("'", "''")
     command = (
@@ -49,4 +49,5 @@ def show_windows_notification(title: str, message: str) -> None:
             text=True,
         )
     except OSError:
-        return
+        return "Notification failed: could not launch PowerShell."
+    return None

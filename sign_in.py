@@ -2,21 +2,22 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-from pathlib import Path
 import json
+from pathlib import Path
 import sys
 
-from efcheck.attendance_state import derive_attendance_state
 from efcheck.attendance_response import is_attendance_response
+from efcheck.attendance_state import derive_attendance_state
 from efcheck.browser_helpers import (
     ACTIONABLE_DESCENDANT_SELECTOR,
     day_card_selector_candidates,
     day_label_candidates,
 )
 from efcheck.daily_gate import RunGateState, load_state, mark_attempt, should_run_today
+from efcheck.errors import ConfigError, InteractionError, StateFileError
 from efcheck.notifications import notify_status
 from efcheck.result_helpers import final_signin_status
-from efcheck.statuses import ALREADY_DONE, ERROR, READY_TO_SIGN, SESSION_EXPIRED, SUCCESS, UNKNOWN
+from efcheck.statuses import ALREADY_DONE, ERROR, SESSION_EXPIRED, SUCCESS, UNKNOWN
 from efcheck.time_helpers import load_timezone
 
 
@@ -33,7 +34,7 @@ def main() -> int:
         try:
             timezone = load_timezone(settings["timezone"])
         except RuntimeError as exc:
-            raise ValueError(str(exc)) from exc
+            raise ConfigError(str(exc)) from exc
         now = datetime.now(timezone)
         state_path = resolve_path(config_path, settings["state_path"])
         log_dir = resolve_path(config_path, settings["log_dir"])
@@ -86,19 +87,27 @@ def main() -> int:
             ),
         )
         write_log(log_dir, now, status, outcome_message)
-        notify_status(
+        notification_warning = notify_status(
             status,
             "EFCheck session expired",
             "The saved sign-in session needs to be refreshed. Run capture_session.bat.",
         )
+        if notification_warning:
+            write_log(log_dir, now, "NOTIFICATION_WARNING", notification_warning)
         print(outcome_message)
         return 0 if status in {SUCCESS, ALREADY_DONE} else 10
     except FileNotFoundError as exc:
         print(f"Missing file: {exc}", file=sys.stderr)
         return 30
-    except ValueError as exc:
+    except ConfigError as exc:
         print(f"Configuration error: {exc}", file=sys.stderr)
         return 30
+    except StateFileError as exc:
+        print(f"State file error: {exc}", file=sys.stderr)
+        return 30
+    except InteractionError as exc:
+        print(f"Runtime error: {exc}", file=sys.stderr)
+        return 10
     except ImportError as exc:
         print(f"Missing dependency: {exc}", file=sys.stderr)
         return 20
@@ -127,18 +136,23 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_settings(config_path: Path) -> dict:
-    data = json.loads(config_path.read_text(encoding="utf-8"))
-    return {
-        "timezone": data.get("timezone", "Asia/Taipei"),
-        "signin_url": data.get("signin_url", DEFAULT_URL),
-        "state_path": data.get("state_path", "../state/last_run.json"),
-        "log_dir": data.get("log_dir", "../logs"),
-        "browser_profile_dir": data.get("browser_profile_dir", "../state/browser-profile"),
-        "browser_channel": data.get("browser_channel", ""),
-        "headless": bool(data.get("headless", True)),
-        "timeout_seconds": int(data.get("timeout_seconds", 20)),
-        "max_attempts_per_day": int(data.get("max_attempts_per_day", 2)),
-    }
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+        return {
+            "timezone": data.get("timezone", "Asia/Taipei"),
+            "signin_url": data.get("signin_url", DEFAULT_URL),
+            "state_path": data.get("state_path", "../state/last_run.json"),
+            "log_dir": data.get("log_dir", "../logs"),
+            "browser_profile_dir": data.get("browser_profile_dir", "../state/browser-profile"),
+            "browser_channel": data.get("browser_channel", ""),
+            "headless": bool(data.get("headless", True)),
+            "timeout_seconds": int(data.get("timeout_seconds", 20)),
+            "max_attempts_per_day": int(data.get("max_attempts_per_day", 2)),
+        }
+    except json.JSONDecodeError as exc:
+        raise ConfigError(f"Could not parse config file at {config_path}: {exc.msg}.") from exc
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"Invalid configuration values in {config_path}: {exc}") from exc
 
 
 def resolve_path(config_path: Path, raw_path: str) -> Path:
@@ -281,7 +295,7 @@ def run_browser_sign_in(
 
 def click_day_tile(page, day_number: int | None) -> None:
     if day_number is None:
-        raise ValueError("No available day was detected to click.")
+        raise InteractionError("No available day was detected to click.")
     labels = day_label_candidates(day_number)
 
     for selector in day_card_selector_candidates(day_number):
@@ -303,7 +317,7 @@ def click_day_tile(page, day_number: int | None) -> None:
         for locator in candidates:
             if try_click_locator(locator):
                 return
-    raise ValueError(f"Could not click the tile for day {day_number}. Tried labels: {labels}")
+    raise InteractionError(f"Could not click the tile for day {day_number}. Tried labels: {labels}")
 
 
 def try_click_locator(locator) -> bool:
@@ -317,13 +331,33 @@ def try_click_locator(locator) -> bool:
 
 def page_looks_logged_out(page) -> bool:
     current_url = page.url.lower()
+    if "login" in current_url:
+        return True
+    if page_has_login_form(page):
+        return True
+
     body_text = ""
     try:
         body_text = page.locator("body").inner_text(timeout=2000).lower()
     except Exception:
         body_text = ""
-    login_markers = ["login", "log in", "sign in", "登入", "登录", "account"]
-    return "login" in current_url or any(marker in body_text for marker in login_markers)
+    login_markers = ["login", "log in", "sign in", "登入", "登录"]
+    return any(marker in body_text for marker in login_markers)
+
+
+def page_has_login_form(page) -> bool:
+    selectors = [
+        "input[type='password']",
+        "input[name='password']",
+        "input[autocomplete='current-password']",
+    ]
+    for selector in selectors:
+        try:
+            if page.locator(selector).count() > 0:
+                return True
+        except Exception:
+            continue
+    return False
 
 
 def next_attempt_count(previous_state: RunGateState, today: str) -> int:

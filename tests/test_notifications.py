@@ -11,12 +11,20 @@ class NotificationTests(unittest.TestCase):
     def test_success_does_not_require_notification(self) -> None:
         self.assertFalse(should_notify_status("SUCCESS"))
 
-    def test_notification_ignores_missing_powershell_executable(self) -> None:
-        with patch(
+    def test_notification_reports_missing_powershell_executable(self) -> None:
+        with patch("efcheck.notifications.shutil.which", return_value=None):
+            message = notify_status("SESSION_EXPIRED", "title", "message")
+
+        self.assertIn("no PowerShell executable", message)
+
+    def test_notification_reports_subprocess_failures(self) -> None:
+        with patch("efcheck.notifications.shutil.which", return_value="powershell"), patch(
             "efcheck.notifications.subprocess.run",
             side_effect=FileNotFoundError("powershell"),
         ):
-            notify_status("SESSION_EXPIRED", "title", "message")
+            message = notify_status("SESSION_EXPIRED", "title", "message")
+
+        self.assertIn("Notification failed", message)
 
 
 if __name__ == "__main__":

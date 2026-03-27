@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 import json
 
+from efcheck.errors import StateFileError
+
 
 @dataclass
 class RunGateState:
@@ -31,7 +33,10 @@ def load_state(state_path: Path) -> RunGateState:
     if not state_path.exists():
         return RunGateState()
 
-    data = json.loads(state_path.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(state_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise StateFileError(f"Could not parse state file at {state_path}: {exc.msg}.") from exc
     attempts_today = data.get("attempts_today")
     if attempts_today is None and data.get("last_attempt_date") and data.get("last_status"):
         attempts_today = 1

@@ -21,12 +21,14 @@ if /I "%CAPTURE_NOW%"=="Y" (
       py -3 capture_session.py
     )
   )
+  if errorlevel 1 exit /b 1
 )
 
 echo.
 set /p REGISTER_TASK=Register the Windows logon scheduled task now? [Y/N]:
 if /I "%REGISTER_TASK%"=="Y" (
   call ".\register_logon_task.bat" --no-pause
+  if errorlevel 1 exit /b 1
 )
 
 echo.

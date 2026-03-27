@@ -16,15 +16,21 @@ if errorlevel 1 (
 
 if not exist ".venv\Scripts\python.exe" (
   %PYTHON_CMD% -m venv .venv
+  if errorlevel 1 exit /b 1
 )
 
 call ".venv\Scripts\activate.bat"
+if errorlevel 1 exit /b 1
 python -m pip install --upgrade pip
+if errorlevel 1 exit /b 1
 python -m pip install -r requirements.txt
+if errorlevel 1 exit /b 1
 playwright install chromium
+if errorlevel 1 exit /b 1
 
 if not exist "config\settings.json" (
   copy /Y "config\settings.example.json" "config\settings.json" >nul
+  if errorlevel 1 exit /b 1
 )
 
 echo Setup complete.
