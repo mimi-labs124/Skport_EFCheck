@@ -113,4 +113,5 @@ The output zip is created in `dist/`.
 - If the saved session expires, run `capture_session.bat` again
 - Website structure or policies may change over time
 - The `tests/` folder is intentionally tracked to document expected behavior and catch regressions
+- See [`SECURITY.md`](./SECURITY.md) before sharing or publishing anything built from your local workspace
 - This project is unofficial and is not affiliated with Hypergryph or SKPORT

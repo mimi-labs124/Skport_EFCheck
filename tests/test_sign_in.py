@@ -60,6 +60,29 @@ class _CountLocator:
         return self._count
 
 
+class _ClickableLocator:
+    def __init__(self, name: str, *, success: bool = False, children: dict[str, "_ClickableLocator"] | None = None) -> None:
+        self.name = name
+        self.success = success
+        self.children = children or {}
+        self.clicked = False
+
+    @property
+    def first(self):
+        return self
+
+    def locator(self, selector: str):
+        return self.children.get(selector, _ClickableLocator(f"{self.name}->{selector}", success=False))
+
+    def scroll_into_view_if_needed(self, timeout: int = 2000) -> None:
+        return None
+
+    def click(self, timeout: int = 2000, force: bool = True) -> None:
+        if not self.success:
+            raise RuntimeError(f"{self.name} was not clickable")
+        self.clicked = True
+
+
 class _FakePage:
     def __init__(self, responses: list[_FakeResponse]) -> None:
         self._responses = list(responses)
@@ -95,6 +118,18 @@ class _FakePage:
 
     def get_by_text(self, text: str, exact: bool = False):
         raise AssertionError("click_day_tile should be mocked in this test")
+
+
+class _ClickPage:
+    def __init__(self, *, locators: dict[str, _ClickableLocator] | None = None, texts: dict[str, _ClickableLocator] | None = None) -> None:
+        self._locators = locators or {}
+        self._texts = texts or {}
+
+    def locator(self, selector: str):
+        return self._locators.get(selector, _ClickableLocator(selector, success=False))
+
+    def get_by_text(self, text: str, exact: bool = False):
+        return self._texts.get(text, _ClickableLocator(text, success=False))
 
 
 class _FakeContext:
@@ -268,6 +303,53 @@ class SignInTests(unittest.TestCase):
         page.login_form_count = 0
 
         self.assertFalse(sign_in.page_looks_logged_out(page))
+
+    def test_page_looks_logged_out_for_login_url(self) -> None:
+        page = _FakePage([])
+        page.url = "https://example.com/login"
+
+        self.assertTrue(sign_in.page_looks_logged_out(page))
+
+    def test_page_looks_logged_out_for_login_form(self) -> None:
+        page = _FakePage([])
+        page.login_form_count = 1
+
+        self.assertTrue(sign_in.page_looks_logged_out(page))
+
+    def test_click_day_tile_prefers_card_actionable_descendant(self) -> None:
+        button = _ClickableLocator("card-button", success=True)
+        container = _ClickableLocator(
+            "card-container",
+            success=False,
+            children={sign_in.ACTIONABLE_DESCENDANT_SELECTOR: button},
+        )
+        page = _ClickPage(locators={"card-selector": container})
+
+        with patch.object(sign_in, "day_card_selector_candidates", return_value=["card-selector"]), patch.object(
+            sign_in, "day_label_candidates", return_value=["Day 9"]
+        ):
+            sign_in.click_day_tile(page, 9)
+
+        self.assertTrue(button.clicked)
+
+    def test_click_day_tile_falls_back_to_text_match(self) -> None:
+        text_locator = _ClickableLocator("text-match", success=True)
+        failing_container = _ClickableLocator("card-container", success=False)
+        page = _ClickPage(
+            locators={
+                "card-selector": failing_container,
+                "text=Day 9": _ClickableLocator("text-selector", success=False),
+                "div:has-text('Day 9')": _ClickableLocator("div-text-selector", success=False),
+            },
+            texts={"Day 9": text_locator},
+        )
+
+        with patch.object(sign_in, "day_card_selector_candidates", return_value=["card-selector"]), patch.object(
+            sign_in, "day_label_candidates", return_value=["Day 9"]
+        ):
+            sign_in.click_day_tile(page, 9)
+
+        self.assertTrue(text_locator.clicked)
 
 
 if __name__ == "__main__":

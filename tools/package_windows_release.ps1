@@ -24,6 +24,7 @@ $files = @(
     "LICENSE",
     "README.md",
     "README.zh-TW.md",
+    "SECURITY.md",
     "requirements.txt",
     "sign_in.py",
     "capture_session.py",

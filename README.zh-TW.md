@@ -113,4 +113,5 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 - 如果登入 session 失效，重新執行 `capture_session.bat` 即可
 - 網站結構或政策未來可能變動
 - `tests/` 資料夾是刻意保留在版本控制中的，用來記錄預期行為並避免回歸
+- 在分享或發布你本機打包成果前，請先看 [`SECURITY.md`](./SECURITY.md)
 - 本專案為非官方工具，與 Hypergryph、SKPORT 無隸屬關係
