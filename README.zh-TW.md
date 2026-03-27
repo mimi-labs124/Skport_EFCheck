@@ -58,8 +58,8 @@ register_logon_task.bat
 
 如果當前不是管理員權限，這個腳本現在會自動重新開啟自己，並跳出 UAC 要求授權。
 
-這個腳本會在登入後先延遲一小段時間，再執行簽到命令。
-現在建立出的工作排程會透過隱藏的 PowerShell 背景執行，因此正常情況下不會在登入後留下卡住的 `cmd` 視窗。
+建立出的工作排程會在登入後延遲一小段時間，再透過隱藏的 PowerShell 直接啟動 `sign_in.py`。
+`run_signin.bat` 仍然保留給手動執行使用，但它不再是工作排程實際呼叫的動作。
 
 ## 設定
 
@@ -92,9 +92,9 @@ copy config\settings.example.json config\settings.json
 - [`install_efcheck.bat`](./install_efcheck.bat)：引導式完整安裝流程
 - [`setup_windows.bat`](./setup_windows.bat)：Windows 一鍵安裝
 - [`capture_session.bat`](./capture_session.bat)：一鍵擷取 session
-- [`run_signin.bat`](./run_signin.bat)：手動或背景排程共用的執行入口
+- [`run_signin.bat`](./run_signin.bat)：手動執行輔助腳本
 - [`register_logon_task.bat`](./register_logon_task.bat)：一鍵註冊排程包裝器
-- [`register_logon_task.ps1`](./register_logon_task.ps1)：工作排程註冊腳本
+- [`register_logon_task.ps1`](./register_logon_task.ps1)：建立隱藏 PowerShell 登入排程，直接執行 `sign_in.py`
 - [`tools/package_windows_release.ps1`](./tools/package_windows_release.ps1)：產出 Windows zip 發佈包
 - [`config/settings.example.json`](./config/settings.example.json)：範例設定檔
 

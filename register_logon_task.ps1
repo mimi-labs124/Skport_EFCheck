@@ -67,9 +67,14 @@ if (-not (Test-IsAdministrator)) {
     }
 
     try {
-        Start-Process -FilePath "powershell.exe" -ArgumentList $elevatedArguments -Verb RunAs | Out-Null
         Write-Host "Elevation requested. Approve the UAC prompt to register the scheduled task."
-        exit 0
+        $proc = Start-Process `
+            -FilePath "powershell.exe" `
+            -ArgumentList $elevatedArguments `
+            -Verb RunAs `
+            -PassThru `
+            -Wait
+        exit $proc.ExitCode
     }
     catch {
         throw "Administrator permission is required to register the scheduled task."

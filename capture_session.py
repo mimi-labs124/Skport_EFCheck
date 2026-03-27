@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import json
 import sys
+
+from efcheck.config import load_runtime_settings, resolve_path
+from efcheck.errors import ConfigError
 
 
 DEFAULT_CONFIG = Path("config/settings.json")
@@ -14,13 +16,10 @@ def main() -> int:
     args = parse_args()
     config_path = Path(args.config).resolve()
     try:
-        settings = json.loads(config_path.read_text(encoding="utf-8"))
-        profile_dir = resolve_path(
-            config_path,
-            settings.get("browser_profile_dir", "../state/browser-profile"),
-        )
-        signin_url = settings.get("signin_url", DEFAULT_URL)
-        channel = settings.get("browser_channel", "")
+        settings = load_runtime_settings(config_path, DEFAULT_URL)
+        profile_dir = resolve_path(config_path, settings.browser_profile_dir)
+        signin_url = settings.signin_url
+        channel = settings.browser_channel
 
         try:
             from playwright.sync_api import sync_playwright
@@ -51,7 +50,7 @@ def main() -> int:
     except FileNotFoundError as exc:
         print(f"Missing file: {exc}", file=sys.stderr)
         return 30
-    except ValueError as exc:
+    except ConfigError as exc:
         print(f"Configuration error: {exc}", file=sys.stderr)
         return 30
 
@@ -60,14 +59,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Capture a browser session for EFCheck.")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to settings.json")
     return parser.parse_args()
-
-
-def resolve_path(config_path: Path, raw_path: str) -> Path:
-    candidate = Path(raw_path)
-    if candidate.is_absolute():
-        return candidate
-    return (config_path.parent / candidate).resolve()
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

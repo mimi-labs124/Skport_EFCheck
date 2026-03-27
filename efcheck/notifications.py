@@ -35,7 +35,7 @@ def show_windows_notification(title: str, message: str) -> str | None:
         "$notify.Dispose();"
     ).format(title=escaped_title, message=escaped_message)
     try:
-        subprocess.run(
+        result = subprocess.run(
             [
                 powershell_executable,
                 "-NoProfile",
@@ -50,4 +50,8 @@ def show_windows_notification(title: str, message: str) -> str | None:
         )
     except OSError:
         return "Notification failed: could not launch PowerShell."
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        detail = f" {stderr}" if stderr else ""
+        return f"Notification failed: PowerShell exited with code {result.returncode}.{detail}"
     return None

@@ -16,6 +16,9 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn("-WindowStyle Hidden", script)
         self.assertIn('Start-Sleep -Seconds', script)
         self.assertNotIn('New-ScheduledTaskAction -Execute "cmd.exe"', script)
+        self.assertIn("-PassThru", script)
+        self.assertIn("-Wait", script)
+        self.assertIn("exit $proc.ExitCode", script)
 
 
 if __name__ == "__main__":

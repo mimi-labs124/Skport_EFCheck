@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-import json
 from pathlib import Path
 import sys
 
@@ -13,6 +12,7 @@ from efcheck.browser_helpers import (
     day_card_selector_candidates,
     day_label_candidates,
 )
+from efcheck.config import load_runtime_settings, resolve_path
 from efcheck.daily_gate import RunGateState, load_state, mark_attempt, should_run_today
 from efcheck.errors import ConfigError, InteractionError, StateFileError
 from efcheck.notifications import notify_status
@@ -30,15 +30,15 @@ def main() -> int:
     config_path = Path(args.config).resolve()
 
     try:
-        settings = load_settings(config_path)
+        settings = load_runtime_settings(config_path, DEFAULT_URL)
         try:
-            timezone = load_timezone(settings["timezone"])
+            timezone = load_timezone(settings.timezone)
         except RuntimeError as exc:
             raise ConfigError(str(exc)) from exc
         now = datetime.now(timezone)
-        state_path = resolve_path(config_path, settings["state_path"])
-        log_dir = resolve_path(config_path, settings["log_dir"])
-        profile_dir = resolve_path(config_path, settings["browser_profile_dir"])
+        state_path = resolve_path(config_path, settings.state_path)
+        log_dir = resolve_path(config_path, settings.log_dir)
+        profile_dir = resolve_path(config_path, settings.browser_profile_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
         today = now.date().isoformat()
         previous_state = load_state(state_path)
@@ -47,13 +47,13 @@ def main() -> int:
             allowed, previous_state = should_run_today(
                 state_path,
                 today,
-                max_attempts_per_day=settings["max_attempts_per_day"],
+                max_attempts_per_day=settings.max_attempts_per_day,
             )
             if not allowed:
                 message = (
                     f"Skipped: already attempted on {previous_state.last_attempt_date} "
                     f"with status {previous_state.last_status} "
-                    f"({previous_state.attempts_today}/{settings['max_attempts_per_day']} attempts today)."
+                    f"({previous_state.attempts_today}/{settings.max_attempts_per_day} attempts today)."
                 )
                 write_log(
                     log_dir,
@@ -72,10 +72,10 @@ def main() -> int:
 
         outcome_message, status = run_browser_sign_in(
             profile_dir=profile_dir,
-            signin_url=settings["signin_url"],
-            headless=settings["headless"],
-            browser_channel=settings["browser_channel"],
-            timeout_seconds=settings["timeout_seconds"],
+            signin_url=settings.signin_url,
+            headless=settings.headless,
+            browser_channel=settings.browser_channel,
+            timeout_seconds=settings.timeout_seconds,
         )
         mark_attempt(
             state_path,
@@ -135,40 +135,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_settings(config_path: Path) -> dict:
-    try:
-        data = json.loads(config_path.read_text(encoding="utf-8"))
-        return {
-            "timezone": data.get("timezone", "Asia/Taipei"),
-            "signin_url": data.get("signin_url", DEFAULT_URL),
-            "state_path": data.get("state_path", "../state/last_run.json"),
-            "log_dir": data.get("log_dir", "../logs"),
-            "browser_profile_dir": data.get("browser_profile_dir", "../state/browser-profile"),
-            "browser_channel": data.get("browser_channel", ""),
-            "headless": bool(data.get("headless", True)),
-            "timeout_seconds": int(data.get("timeout_seconds", 20)),
-            "max_attempts_per_day": int(data.get("max_attempts_per_day", 2)),
-        }
-    except json.JSONDecodeError as exc:
-        raise ConfigError(f"Could not parse config file at {config_path}: {exc.msg}.") from exc
-    except (TypeError, ValueError) as exc:
-        raise ConfigError(f"Invalid configuration values in {config_path}: {exc}") from exc
-
-
-def resolve_path(config_path: Path, raw_path: str) -> Path:
-    candidate = Path(raw_path)
-    if candidate.is_absolute():
-        return candidate
-    return (config_path.parent / candidate).resolve()
-
-
-def summarize_browser_run(settings: dict, profile_dir: Path) -> str:
+def summarize_browser_run(settings, profile_dir: Path) -> str:
     return (
         "Dry run only. Browser sign-in is configured for "
-        f"{settings['signin_url']} | "
+        f"{settings.signin_url} | "
         f"profile_dir={profile_dir} | "
-        f"headless={settings['headless']} | "
-        f"channel={settings['browser_channel']}"
+        f"headless={settings.headless} | "
+        f"channel={settings.browser_channel}"
     )
 
 

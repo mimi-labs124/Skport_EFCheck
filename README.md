@@ -58,8 +58,9 @@ register_logon_task.bat
 
 If the script is not already running as administrator, it now relaunches itself and asks for UAC approval automatically.
 
-The helper adds a short delay after logon before launching the sign-in command.
-The scheduled task now runs through a hidden PowerShell action, so it should not leave a `cmd` window sitting on screen after logon.
+The scheduled task runs a hidden PowerShell command that starts `sign_in.py`
+after a short delay at Windows logon.
+`run_signin.bat` remains available for manual runs, but it is not the task action itself.
 
 ## Configuration
 
@@ -92,9 +93,9 @@ Main settings:
 - [`install_efcheck.bat`](./install_efcheck.bat): guided setup for installation, session capture, and task registration
 - [`setup_windows.bat`](./setup_windows.bat): one-click Windows setup
 - [`capture_session.bat`](./capture_session.bat): one-click session capture
-- [`run_signin.bat`](./run_signin.bat): manual/background run entry used by Task Scheduler
+- [`run_signin.bat`](./run_signin.bat): manual run helper
 - [`register_logon_task.bat`](./register_logon_task.bat): one-click scheduled-task wrapper
-- [`register_logon_task.ps1`](./register_logon_task.ps1): Task Scheduler helper
+- [`register_logon_task.ps1`](./register_logon_task.ps1): creates the hidden PowerShell logon task for `sign_in.py`
 - [`tools/package_windows_release.ps1`](./tools/package_windows_release.ps1): build a Windows zip release
 - [`config/settings.example.json`](./config/settings.example.json): sample config
 

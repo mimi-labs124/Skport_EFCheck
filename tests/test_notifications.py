@@ -26,6 +26,20 @@ class NotificationTests(unittest.TestCase):
 
         self.assertIn("Notification failed", message)
 
+    def test_notification_reports_nonzero_return_code(self) -> None:
+        class Completed:
+            returncode = 1
+            stderr = "toast failed"
+
+        with patch("efcheck.notifications.shutil.which", return_value="powershell"), patch(
+            "efcheck.notifications.subprocess.run",
+            return_value=Completed(),
+        ):
+            message = notify_status("SESSION_EXPIRED", "title", "message")
+
+        self.assertIn("exited with code 1", message)
+        self.assertIn("toast failed", message)
+
 
 if __name__ == "__main__":
     unittest.main()
