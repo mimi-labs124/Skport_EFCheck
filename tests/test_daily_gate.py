@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from efcheck.errors import StateFileError
 from efcheck.daily_gate import RunGateState, mark_attempt, should_run_today
+from efcheck.errors import StateFileError
 
 
 class DailyGateTests(unittest.TestCase):

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "efcheck"
+version = "0.2.0"
+description = "Windows-first SKPORT sign-in helper for Endfield and Arknights."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "mimi-labs124" }
+]
+dependencies = [
+  "playwright>=1.58,<2",
+  "tzdata>=2025.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pyinstaller>=6.14,<7",
+  "ruff>=0.12,<0.13",
+]
+
+[project.scripts]
+efcheck = "efcheck.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["efcheck", "efcheck.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

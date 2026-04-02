@@ -7,7 +7,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-import capture_session
+from efcheck.commands import capture_session
 
 
 class CaptureSessionTests(unittest.TestCase):

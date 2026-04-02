@@ -14,24 +14,28 @@ if errorlevel 1 (
   set "PYTHON_CMD=py -3"
 )
 
-if not exist ".venv\Scripts\python.exe" (
-  %PYTHON_CMD% -m venv .venv
+if exist ".\efcheck.exe" (
+  set "EFCHECK_CMD=.\efcheck.exe"
+) else (
+  if not exist ".venv\Scripts\python.exe" (
+    %PYTHON_CMD% -m venv .venv
+    if errorlevel 1 exit /b 1
+  )
+
+  call ".venv\Scripts\activate.bat"
   if errorlevel 1 exit /b 1
+  python -m pip install --upgrade pip
+  if errorlevel 1 exit /b 1
+  python -m pip install -e .
+  if errorlevel 1 exit /b 1
+
+  set "EFCHECK_CMD=.venv\Scripts\python.exe -m efcheck"
 )
 
-call ".venv\Scripts\activate.bat"
+%EFCHECK_CMD% init
 if errorlevel 1 exit /b 1
-python -m pip install --upgrade pip
+%EFCHECK_CMD% doctor --install-browser
 if errorlevel 1 exit /b 1
-python -m pip install -r requirements.txt
-if errorlevel 1 exit /b 1
-playwright install chromium
-if errorlevel 1 exit /b 1
-
-if not exist "config\settings.json" (
-  copy /Y "config\settings.example.json" "config\settings.json" >nul
-  if errorlevel 1 exit /b 1
-)
 
 echo Setup complete.
 echo Next: run capture_session.bat

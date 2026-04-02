@@ -8,7 +8,7 @@ from datetime import timezone
 from pathlib import Path
 from unittest.mock import patch
 
-import sign_in
+from efcheck.commands import run as sign_in
 from efcheck.errors import InteractionError, StateFileError
 from efcheck.statuses import SUCCESS
 
@@ -61,7 +61,13 @@ class _CountLocator:
 
 
 class _ClickableLocator:
-    def __init__(self, name: str, *, success: bool = False, children: dict[str, "_ClickableLocator"] | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        *,
+        success: bool = False,
+        children: dict[str, "_ClickableLocator"] | None = None,
+    ) -> None:
         self.name = name
         self.success = success
         self.children = children or {}
@@ -72,7 +78,10 @@ class _ClickableLocator:
         return self
 
     def locator(self, selector: str):
-        return self.children.get(selector, _ClickableLocator(f"{self.name}->{selector}", success=False))
+        return self.children.get(
+            selector,
+            _ClickableLocator(f"{self.name}->{selector}", success=False),
+        )
 
     def scroll_into_view_if_needed(self, timeout: int = 2000) -> None:
         return None
@@ -121,7 +130,12 @@ class _FakePage:
 
 
 class _ClickPage:
-    def __init__(self, *, locators: dict[str, _ClickableLocator] | None = None, texts: dict[str, _ClickableLocator] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        locators: dict[str, _ClickableLocator] | None = None,
+        texts: dict[str, _ClickableLocator] | None = None,
+    ) -> None:
         self._locators = locators or {}
         self._texts = texts or {}
 
@@ -198,7 +212,7 @@ class SignInTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             profile_dir = Path(temp_dir) / "browser-profile"
             profile_dir.mkdir()
-            with patch("sign_in.click_day_tile"), patch(
+            with patch.object(sign_in, "click_day_tile"), patch(
                 "playwright.sync_api.sync_playwright",
                 return_value=_FakeSyncPlaywright(_FakePlaywright(fake_context)),
             ):
@@ -248,7 +262,11 @@ class SignInTests(unittest.TestCase):
                 sign_in,
                 "parse_args",
                 return_value=Namespace(config=str(config_path), dry_run=True, force=False),
-            ), patch.object(sign_in, "load_timezone", return_value=timezone.utc), redirect_stdout(stdout):
+            ), patch.object(
+                sign_in,
+                "load_timezone",
+                return_value=timezone.utc,
+            ), redirect_stdout(stdout):
                 exit_code = sign_in.main()
 
         self.assertEqual(exit_code, 0)
@@ -370,7 +388,11 @@ class SignInTests(unittest.TestCase):
                 sign_in,
                 "parse_args",
                 return_value=Namespace(config=str(config_path), dry_run=False, force=False),
-            ), patch.object(sign_in, "load_timezone", side_effect=RuntimeError("bad timezone")), redirect_stderr(stderr):
+            ), patch.object(
+                sign_in,
+                "load_timezone",
+                side_effect=RuntimeError("bad timezone"),
+            ), redirect_stderr(stderr):
                 exit_code = sign_in.main()
 
         self.assertEqual(exit_code, 30)
@@ -434,9 +456,11 @@ class SignInTests(unittest.TestCase):
         )
         page = _ClickPage(locators={"card-selector": container})
 
-        with patch.object(sign_in, "day_card_selector_candidates", return_value=["card-selector"]), patch.object(
-            sign_in, "day_label_candidates", return_value=["Day 9"]
-        ):
+        with patch.object(
+            sign_in,
+            "day_card_selector_candidates",
+            return_value=["card-selector"],
+        ), patch.object(sign_in, "day_label_candidates", return_value=["Day 9"]):
             sign_in.click_day_tile(page, 9)
 
         self.assertTrue(button.clicked)
@@ -453,9 +477,11 @@ class SignInTests(unittest.TestCase):
             texts={"Day 9": text_locator},
         )
 
-        with patch.object(sign_in, "day_card_selector_candidates", return_value=["card-selector"]), patch.object(
-            sign_in, "day_label_candidates", return_value=["Day 9"]
-        ):
+        with patch.object(
+            sign_in,
+            "day_card_selector_candidates",
+            return_value=["card-selector"],
+        ), patch.object(sign_in, "day_label_candidates", return_value=["Day 9"]):
             sign_in.click_day_tile(page, 9)
 
         self.assertTrue(text_locator.clicked)

@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch
-
 from zoneinfo import ZoneInfoNotFoundError
 
 from efcheck.time_helpers import load_timezone

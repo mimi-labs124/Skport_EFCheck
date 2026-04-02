@@ -52,7 +52,10 @@ class ConfigTests(unittest.TestCase):
 
         self.assertEqual([site.key for site in settings.sites], ["endfield", "arknights"])
         self.assertEqual(settings.sites[1].attendance_path, "/api/v1/game/attendance")
-        self.assertEqual(settings.sites[0].browser_profile_dir, settings.sites[1].browser_profile_dir)
+        self.assertEqual(
+            settings.sites[0].browser_profile_dir,
+            settings.sites[1].browser_profile_dir,
+        )
 
     def test_load_runtime_settings_derives_arknights_attendance_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

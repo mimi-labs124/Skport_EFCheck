@@ -2,162 +2,305 @@
 
 [English README](./README.md)
 
-EFCheck 是一個以 Windows 為主的 SKPORT 每日簽到工具，支援《明日方舟：終末地》與《明日方舟》。
+EFCheck 是一個非官方、以 Windows 為主的 SKPORT 自動簽到工具，支援《明日方舟：終末地》與《明日方舟》。
 
-它使用獨立的 Playwright 瀏覽器 profile，把登入 session 保存在本機資料夾中，平常以 headless 方式執行，也可以在 Windows 登入後自動背景觸發。
+它同時支援兩種使用方式：
+
+- 原始碼模式：clone repo 後用 Python 執行
+- 打包模式：使用 Windows onedir 或 onefile 發行包
+
+EFCheck 會把瀏覽器 session 保存在本機，不適合公開分享。發布或打包前請先閱讀 [SECURITY.md](./SECURITY.md)。
 
 ## 功能
 
-- 使用本機瀏覽器 profile 的 headless 自動簽到
-- 預設每天最多嘗試 2 次
-- 一旦出現 `SUCCESS` 或 `ALREADY_DONE` 就停止重試
-- 偵測到 session 失效時顯示 Windows 桌面通知
-- 提供安裝、擷取 session、手動執行與註冊排程的批次檔
-- 單次執行可依序處理 Endfield 與 Arknights
+- 擷取並重用 Playwright 瀏覽器 profile
+- 依序處理一個或多個已啟用的 SKPORT 簽到頁
+- 以每個站點分開保存 local state 與重試 gate
+- 可註冊 Windows 登入後自動執行的工作排程
+- 提供統一 CLI 與相容的 batch wrapper
+- 支援：
+  - 可攜式 one-folder Windows 發行包
+  - 單一 one-file Windows 執行檔，搭配外部 browser bootstrap
 
-## 需求
+## 支援平台
 
-- Windows
-- Python 3.11 以上
-- Google Chrome，或 Playwright 自帶的 Chromium
+- 主要支援 Windows
+- 原始碼模式需要 Python 3.11+
+- 實際簽到與 session capture 需要 Playwright Chromium
+
+## 敏感資料
+
+不要公開或分享以下資料：
+
+- `state/`
+- `logs/`
+- 真實的 `config/settings.json`
+- 任何 browser profile 目錄
+- 任何 cookie、session、request dump
+
+這些資料可能包含 cookies、local storage、access token 或其他登入憑證。
 
 ## 快速開始
 
-1. 執行引導式安裝：
+### 原始碼模式
+
+1. clone repo
+2. 執行：
 
 ```bat
 install_efcheck.bat
 ```
 
-這個流程會：
+導引流程會：
 
-- 安裝 Python 依賴與 Playwright runtime
-- 詢問是否加入 Arknights
-- 若加入 Arknights，詢問是否與 Endfield 共用 browser profile
-- 詢問是否立即擷取 session
-- 詢問是否立即註冊 Windows 登入排程
+- 在 `.venv` 安裝 Python 套件
+- 初始化本機設定檔
+- 可選擇是否加入 Arknights
+- 可選擇 Arknights 是否共用 Endfield 的 browser profile
+- 可選擇是否立即擷取 session
+- 可選擇是否立即註冊 Windows logon task
 
-如果你偏好手動流程，可以先執行 `setup_windows.bat`。如果是從舊版本升級，也建議再跑一次，確保 `tzdata` 已安裝。
+### 打包模式
 
-2. 依提示完成一次 session 擷取。
-
-若你選擇立即擷取：
-
-- 會先開啟 Endfield 簽到頁
-- 如果安裝時加入 Arknights，之後會再開一次 Arknights 簽到頁
-- 如果兩者共用 profile，第二次通常不需要重新登入，只要確認頁面正常載入後按 Enter 即可
-
-3. 手動測一次：
+使用 onedir 或 onefile 發行包後，同樣執行：
 
 ```bat
-run_signin.bat
+install_efcheck.bat
 ```
 
-## 排程
+在打包模式下，wrapper 會優先使用 `efcheck.exe`。
 
-註冊 Windows 登入排程：
+## 統一 CLI
+
+套件入口：
 
 ```powershell
+python -m efcheck --help
+```
+
+安裝後也可以：
+
+```powershell
+efcheck --help
+```
+
+可用命令：
+
+- `efcheck init`
+- `efcheck run`
+- `efcheck capture-session`
+- `efcheck configure-sites`
+- `efcheck register-task`
+- `efcheck doctor`
+- `efcheck paths`
+- `efcheck package onedir`
+- `efcheck package onefile`
+
+`efcheck package ...` 只支援原始碼模式。已打包的 `efcheck.exe` 適合執行日常命令，不應再拿來重建 PyInstaller 發行物。
+
+## 典型流程
+
+### 1. 初始化設定
+
+```powershell
+python -m efcheck init
+```
+
+若 `settings.json` 不存在，這會建立一份預設設定。
+
+### 2. 查看路徑
+
+```powershell
+python -m efcheck paths --json
+```
+
+設定檔路徑解析順序：
+
+1. `--config`
+2. `EFCHECK_CONFIG`
+3. 打包模式預設：`%LOCALAPPDATA%\EFCheck\config\settings.json`
+4. 原始碼模式預設：`<repo>\config\settings.json`
+
+Base directory 解析順序：
+
+1. `--base-dir`
+2. `EFCHECK_BASE_DIR`
+3. 打包模式預設：`%LOCALAPPDATA%\EFCheck`
+4. 原始碼模式預設：repo 根目錄
+
+### 3. 擷取 session
+
+```powershell
+python -m efcheck capture-session --site endfield
+```
+
+若也啟用了 Arknights：
+
+```powershell
+python -m efcheck capture-session --site arknights
+```
+
+### 4. 測試執行
+
+```powershell
+python -m efcheck run --dry-run --force
+python -m efcheck run --force
+```
+
+### 5. 註冊 Windows logon task
+
+```powershell
+python -m efcheck register-task
+```
+
+相容 wrapper 仍可使用：
+
+```bat
 register_logon_task.bat
 ```
 
-如果目前不是系統管理員，包裝器會自動重新以提升權限啟動，並要求 UAC 同意。
+## 原始碼模式與打包模式
 
-排程本身會：
+### 原始碼模式預設
 
-- 使用 Task Scheduler 的延遲機制，而不是在 PowerShell 內 `Start-Sleep`
-- 以隱藏的 PowerShell 視窗直接啟動 `sign_in.py`
-- 不透過 `run_signin.bat`
+- Config：`<repo>/config/settings.json`
+- State：`<repo>/state/`
+- Logs：`<repo>/logs/`
+- 舊的 source-mode 設定仍可相容
 
-`run_signin.bat` 保留為手動執行用的 helper。
+### 打包模式預設
 
-## 設定
+- Base dir：`%LOCALAPPDATA%\EFCheck`
+- Config：`%LOCALAPPDATA%\EFCheck\config\settings.json`
+- State：`%LOCALAPPDATA%\EFCheck\state\`
+- Logs：`%LOCALAPPDATA%\EFCheck\logs\`
+- Runtime：`%LOCALAPPDATA%\EFCheck\runtime\`
+- Browser profiles：`%LOCALAPPDATA%\EFCheck\browser-profile\`
 
-只有在你要覆寫預設值時，才需要自己建立本機設定檔：
+## Browser runtime
+
+### 原始碼模式
+
+你仍可使用標準 Playwright 安裝方式：
 
 ```powershell
-copy config\settings.example.json config\settings.json
+playwright install chromium
 ```
 
-主要設定：
+`setup_windows.bat` 會改用：
 
-- `timezone`：每日重試的日期邊界
-- `browser_channel`：留空時使用 Playwright 管理的 Chromium
-- `headless`：是否使用無視窗瀏覽器
-- `timeout_seconds`：頁面與網路等待時間
-- `max_attempts_per_day`：預設為 `2`
-- `sites`：單次執行時要處理的站點清單
-
-每個 site 項目支援：
-
-- `key`：`capture_session.py --site` 使用的識別值
-- `name`：log 與終端輸出顯示名稱
-- `enabled`：是否啟用
-- `signin_url`：簽到頁網址
-- `attendance_path`：用來辨識 attendance API 的路徑
-- `state_path`：該站點自己的每日 gate 狀態檔
-- `browser_profile_dir`：browser profile 路徑；相同代表共用 session，不同代表分開 session
-
-如果你要手動加入 Arknights 並共用 Endfield 的登入 session，可以加上：
-
-```json
-{
-  "key": "arknights",
-  "name": "Arknights",
-  "enabled": true,
-  "signin_url": "https://game.skport.com/arknights/sign-in",
-  "attendance_path": "/api/v1/game/attendance",
-  "state_path": "../state/arknights-last_run.json",
-  "browser_profile_dir": "../state/browser-profile"
-}
+```powershell
+python -m efcheck doctor --install-browser
 ```
 
-如果要分開 session，只需要把 `browser_profile_dir` 換成另一個資料夾，例如 `../state/arknights-browser-profile`。
+這是本專案支援的 browser bootstrap 方式。
 
-## 執行行為
+### 打包模式
 
-- 每個啟用站點都使用自己的 `state_path`
-- 同一次執行會依序處理所有啟用站點
-- 某站點成功或已簽到，不會影響另一個站點的當日 gate
-- session 過期時會嘗試顯示 Windows 桌面通知
+執行檔本身不會把完整 Chromium browser runtime 直接包進二進位檔。
 
-## 多站點說明
+請改用：
 
-- 舊版單站設定仍可用，會被視為僅有 Endfield
-- `capture_session.py` 預設是 `--site endfield`
-- 引導式安裝現在可直接加入 Arknights，並設定是否共用 profile
-- 依照實際頁面檢查，目前 Arknights 使用：
-  - GET `https://zonai.skport.com/api/v1/game/attendance?gameId=1&uid=...`
-  - POST `https://zonai.skport.com/api/v1/game/attendance`
-- 因此 Arknights 預設 `attendance_path` 應為 `/api/v1/game/attendance`
-- 如果 SKPORT 未來改了 endpoint 或 DOM 流程，就要更新 `attendance_path` 並重新實測
+```powershell
+efcheck doctor --install-browser
+```
 
-## 內含腳本
+這會把 browser runtime 安裝到 EFCheck 的資料目錄下，例如 `runtime/playwright-browsers`。
 
-- [`sign_in.py`](./sign_in.py)：主簽到程式
-- [`capture_session.py`](./capture_session.py)：擷取登入 session（支援 `--site`）
-- [`install_efcheck.bat`](./install_efcheck.bat)：引導式安裝入口
-- [`setup_windows.bat`](./setup_windows.bat)：安裝依賴與 Chromium runtime
-- [`capture_session.bat`](./capture_session.bat)：手動擷取 session
-- [`run_signin.bat`](./run_signin.bat)：手動執行 helper
-- [`register_logon_task.bat`](./register_logon_task.bat)：註冊排程的包裝器
-- [`register_logon_task.ps1`](./register_logon_task.ps1)：建立隱藏 PowerShell 的登入排程
-- [`tools/package_windows_release.ps1`](./tools/package_windows_release.ps1)：打包 Windows release zip
-- [`config/settings.example.json`](./config/settings.example.json)：範例設定檔
+## one-folder 與 one-file
 
-## 打包 Windows 發行版
+### one-folder
+
+- 穩定性較高
+- 啟動較快
+- 較容易除錯
+- 建議一般使用者優先使用
+
+### one-file
+
+- 攜帶較方便
+- 啟動較慢，因為 PyInstaller 會先解壓
+- 仍需要額外 browser bootstrap
+- 更適合當成便利 CLI，不是完全自帶瀏覽器的單檔 GUI 工具
+
+## Batch wrappers
+
+為了相容性與使用者體驗，以下 wrapper 仍保留：
+
+- [`install_efcheck.bat`](./install_efcheck.bat)
+- [`setup_windows.bat`](./setup_windows.bat)
+- [`capture_session.bat`](./capture_session.bat)
+- [`run_signin.bat`](./run_signin.bat)
+- [`register_logon_task.bat`](./register_logon_task.bat)
+
+它們會優先使用 `efcheck.exe`，否則 fallback 到 `python -m efcheck ...`。
+
+## 打包
+
+### 建立 onedir
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\build_onedir.ps1
+```
+
+或在原始碼模式下：
+
+```powershell
+python -m efcheck package onedir
+```
+
+### 建立 onefile
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\build_onefile.ps1
+```
+
+或在原始碼模式下：
+
+```powershell
+python -m efcheck package onefile
+```
+
+### 建立 release zip
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\package_release.ps1
+```
+
+舊 wrapper 仍可使用：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 ```
 
-輸出 zip 會放在 `dist/`。
+## 疑難排解
 
-## 注意事項
+- `Missing dependency: playwright ...`
+  先安裝專案依賴，再做 browser bootstrap。
+- `Missing file: Playwright Chromium is not installed ...`
+  原始碼模式請執行 `playwright install chromium`；打包模式請執行
+  `efcheck doctor --install-browser`。
+- `Browser profile not found ...`
+  先執行 `capture-session`。
+- `SESSION_EXPIRED`
+  重新擷取對應站點的 session。
+- `Configuration error`
+  檢查 `settings.json`，尤其是 booleans 與 integer 欄位。
+- 排程沒有出現
+  重新執行 `register-task`，並確認 UAC 提權流程有完成。
 
-- `state/`、`logs/`、真實的 `config/settings.json`、`state/browser-profile/` 都是私有資料，不要上傳
-- 如果登入 session 失效，重新執行 `capture_session.bat`
-- 目標網站的結構與政策可能改變
-- `tests/` 目錄刻意保留在 repo 中，用來固定行為與避免回歸
-- 發布或分享前請先看 [`SECURITY.md`](./SECURITY.md)
-- 本專案為非官方工具，與 Hypergryph、GRYPHLINE、SKPORT 均無隸屬關係
+## 已知限制
+
+- 本工具依賴 SKPORT 頁面結構與 request 模式，站點改版可能導致失效。
+- Arknights 與 Endfield 的 attendance endpoint 不相同。
+- onefile 模式仍依賴外部 Playwright browser install。
+- session capture 必須手動完成登入。
+
+## 開發文件
+
+請參考：
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [docs/packaging.md](./docs/packaging.md)
+- [docs/release.md](./docs/release.md)
+- [CHANGELOG.md](./CHANGELOG.md)

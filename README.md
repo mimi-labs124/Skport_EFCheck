@@ -2,156 +2,308 @@
 
 [繁體中文說明](./README.zh-TW.md)
 
-EFCheck is a Windows-first helper for the Arknights: Endfield daily sign-in page on SKPORT.
+EFCheck is an unofficial Windows-first automation helper for the SKPORT daily sign-in pages used by Arknights: Endfield and Arknights.
 
-It uses a dedicated Playwright browser profile, keeps your saved login session in a local folder, runs headlessly, and can be triggered automatically at Windows logon.
+It supports two operating modes:
 
-## Highlights
+- Source mode: clone the repository and run it with Python
+- Packaged mode: use the Windows onedir or onefile build outputs
 
-- Headless browser sign-in with a dedicated local profile
-- Up to 2 attempts per day by default
-- Stops retrying after `SUCCESS` or `ALREADY_DONE`
-- Windows desktop notification when the saved session appears to be expired
-- Batch scripts for setup, session capture, and manual runs
+EFCheck stores browser session state locally and never expects those files to be published. Read [SECURITY.md](./SECURITY.md) before sharing anything built from your workspace.
 
-## Requirements
+## What it does
 
-- Windows
-- Python 3.11 or newer
-- Google Chrome or the Playwright-managed Chromium runtime
+- Captures a Playwright browser profile and reuses the saved session
+- Signs in one or more enabled SKPORT game pages in sequence
+- Keeps per-site local state and retry gates
+- Can register a Windows logon scheduled task
+- Supports a unified CLI and compatibility batch wrappers
+- Can be packaged as:
+  - a portable one-folder Windows build
+  - a single-file Windows executable with external browser bootstrap
+
+## Supported platform
+
+- Windows is the supported target
+- Python 3.11+ is required for source mode
+- Playwright Chromium is required for actual sign-in and session capture
+
+## Sensitive files
+
+Never publish or share these:
+
+- `state/`
+- `logs/`
+- real `config/settings.json`
+- any browser profile directory
+- any copied cookie/session dump
+
+Those directories may contain cookies, local storage, access tokens, or other login material.
 
 ## Quick start
 
-1. Run the guided setup:
+### Source mode
+
+1. Clone the repo.
+2. Run the guided installer:
 
 ```bat
 install_efcheck.bat
 ```
 
-This guided flow installs dependencies, offers to capture your session, and can register the Windows logon task for you.
-It also asks whether to add the Arknights sign-in page and whether Arknights should share the Endfield browser profile.
+The guided flow will:
 
-If you prefer the manual path, run `setup_windows.bat` first. If you update from an older install, run it again so `tzdata` is installed too.
+- install the Python package into `.venv`
+- initialize local config
+- optionally add Arknights
+- optionally choose whether Arknights shares the Endfield browser profile
+- optionally capture sessions
+- optionally register the Windows logon task
 
-2. Capture your session once:
+### Packaged mode
 
-```bat
-capture_session.bat
-```
-
-3. In the opened browser window, sign in and wait until the Endfield sign-in dashboard is visible.
-
-4. Return to the terminal and press Enter to save the session.
-
-5. Test one manual run:
+Use either the onedir or onefile release output and run:
 
 ```bat
-run_signin.bat
+install_efcheck.bat
 ```
 
-## Scheduling
+In packaged mode the wrappers prefer `efcheck.exe` automatically.
 
-Register a Windows Task Scheduler entry in an elevated PowerShell window:
+## Unified CLI
+
+The package entry point is:
 
 ```powershell
+python -m efcheck --help
+```
+
+or, after installation:
+
+```powershell
+efcheck --help
+```
+
+Available commands:
+
+- `efcheck init`
+- `efcheck run`
+- `efcheck capture-session`
+- `efcheck configure-sites`
+- `efcheck register-task`
+- `efcheck doctor`
+- `efcheck paths`
+- `efcheck package onedir`
+- `efcheck package onefile`
+
+`efcheck package ...` is source-mode only. A packaged `efcheck.exe` can run the
+operational commands, but it is not intended to rebuild PyInstaller artifacts.
+
+## Typical workflow
+
+### 1. Initialize config
+
+```powershell
+python -m efcheck init
+```
+
+This creates a default `settings.json` if one does not already exist.
+
+### 2. Inspect resolved paths
+
+```powershell
+python -m efcheck paths --json
+```
+
+Config resolution order:
+
+1. `--config`
+2. `EFCHECK_CONFIG`
+3. packaged-mode default: `%LOCALAPPDATA%\\EFCheck\\config\\settings.json`
+4. source-mode default: `<repo>\\config\\settings.json`
+
+Base directory resolution order:
+
+1. `--base-dir`
+2. `EFCHECK_BASE_DIR`
+3. packaged-mode default: `%LOCALAPPDATA%\\EFCheck`
+4. source-mode default: repository root
+
+### 3. Capture a session
+
+```powershell
+python -m efcheck capture-session --site endfield
+```
+
+If Arknights is enabled too:
+
+```powershell
+python -m efcheck capture-session --site arknights
+```
+
+### 4. Test a run
+
+```powershell
+python -m efcheck run --dry-run --force
+python -m efcheck run --force
+```
+
+### 5. Register the Windows logon task
+
+```powershell
+python -m efcheck register-task
+```
+
+The compatibility wrapper is still available:
+
+```bat
 register_logon_task.bat
 ```
 
-If the script is not already running as administrator, it now relaunches itself and asks for UAC approval automatically.
+## Source mode vs packaged mode
 
-The scheduled task uses Task Scheduler's own logon delay and then runs a hidden PowerShell command that starts `sign_in.py`.
-`run_signin.bat` remains available for manual runs, but it is not the task action itself.
+### Source mode defaults
 
-## Configuration
+- Config: `<repo>/config/settings.json`
+- State: `<repo>/state/`
+- Logs: `<repo>/logs/`
+- Existing source-mode configs remain compatible
 
-Create a local config file only if you want to override the defaults:
+### Packaged mode defaults
+
+- Base dir: `%LOCALAPPDATA%\\EFCheck`
+- Config: `%LOCALAPPDATA%\\EFCheck\\config\\settings.json`
+- State: `%LOCALAPPDATA%\\EFCheck\\state\\`
+- Logs: `%LOCALAPPDATA%\\EFCheck\\logs\\`
+- Runtime: `%LOCALAPPDATA%\\EFCheck\\runtime\\`
+- Browser profiles: `%LOCALAPPDATA%\\EFCheck\\browser-profile\\`
+
+## Browser runtime
+
+Source mode and packaged mode deliberately differ here.
+
+### Source mode
+
+You can still use the standard Playwright install flow:
 
 ```powershell
-copy config\settings.example.json config\settings.json
+playwright install chromium
 ```
 
-Main settings:
+`setup_windows.bat` instead runs:
 
-- `timezone`: date boundary used for daily retry limits
-- `browser_channel`: leave empty to use the Playwright-managed Chromium build
-- `headless`: whether the sign-in browser runs without a visible window
-- `timeout_seconds`: timeout for page and network waits
-- `max_attempts_per_day`: default `2`
-- `sites`: list of sign-in targets to process in one run
-
-Each site entry supports:
-
-- `key`: stable site identifier used by `capture_session.py --site`
-- `name`: label used in logs and console output
-- `enabled`: whether this site is included in scheduled/manual runs
-- `signin_url`: SKPORT sign-in page for the game
-- `attendance_path`: attendance API path used to validate the run
-- `state_path`: per-site retry gate file
-- `browser_profile_dir`: browser profile directory for shared or separate sessions
-
-To add Arknights with the same login session, add a second entry that points to the same `browser_profile_dir`:
-
-```json
-{
-  "key": "arknights",
-  "name": "Arknights",
-  "enabled": true,
-  "signin_url": "https://game.skport.com/arknights/sign-in",
-  "attendance_path": "/api/v1/game/attendance",
-  "state_path": "../state/arknights-last_run.json",
-  "browser_profile_dir": "../state/browser-profile"
-}
+```powershell
+python -m efcheck doctor --install-browser
 ```
 
-If you want Arknights to keep a separate session, change only `browser_profile_dir` to a different folder.
+which is the supported bootstrap path for this project.
 
-## Runtime behavior
+### Packaged mode
 
-- First successful run of the day stops further retries
-- `ALREADY_DONE` also stops further retries
-- Failed or expired-session runs can use the second daily attempt
-- If the session looks expired, EFCheck shows a Windows desktop notification
-- Enabled sites run sequentially in one invocation, each with its own retry gate file
+The executable does not bundle a full Chromium browser runtime inside the executable itself.
 
-## Included scripts
+Instead, run:
 
-- [`sign_in.py`](./sign_in.py): main sign-in runner
-- [`capture_session.py`](./capture_session.py): one-time login and session capture (`--site arknights` to target another configured site)
-- [`install_efcheck.bat`](./install_efcheck.bat): guided setup for installation, session capture, and task registration
-- [`setup_windows.bat`](./setup_windows.bat): one-click Windows setup
-- [`capture_session.bat`](./capture_session.bat): one-click session capture
-- [`run_signin.bat`](./run_signin.bat): manual run helper
-- [`register_logon_task.bat`](./register_logon_task.bat): one-click scheduled-task wrapper
-- [`register_logon_task.ps1`](./register_logon_task.ps1): creates the hidden PowerShell logon task for `sign_in.py`
-- [`tools/package_windows_release.ps1`](./tools/package_windows_release.ps1): build a Windows zip release
-- [`config/settings.example.json`](./config/settings.example.json): sample config
+```powershell
+efcheck doctor --install-browser
+```
 
-## Packaging a Windows release
+This installs the browser runtime into the packaged EFCheck data directory under `runtime/playwright-browsers`.
 
-Create a zip package with:
+## one-folder vs one-file
+
+### one-folder
+
+- Preferred for reliability
+- Fastest startup
+- Easiest to debug
+- Recommended for most users
+
+### one-file
+
+- More portable
+- Slower startup because PyInstaller extracts at launch
+- Still requires external browser bootstrap
+- Best treated as a convenient CLI binary, not a fully self-contained browser payload
+
+## Batch wrappers
+
+These are kept for compatibility and user convenience:
+
+- [`install_efcheck.bat`](./install_efcheck.bat)
+- [`setup_windows.bat`](./setup_windows.bat)
+- [`capture_session.bat`](./capture_session.bat)
+- [`run_signin.bat`](./run_signin.bat)
+- [`register_logon_task.bat`](./register_logon_task.bat)
+
+They now prefer `efcheck.exe` when present, otherwise they call `python -m efcheck ...`.
+
+## Building packages
+
+### Build onedir
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\build_onedir.ps1
+```
+
+Or from a source checkout:
+
+```powershell
+python -m efcheck package onedir
+```
+
+### Build onefile
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\build_onefile.ps1
+```
+
+Or from a source checkout:
+
+```powershell
+python -m efcheck package onefile
+```
+
+### Build release zips
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\package_release.ps1
+```
+
+Legacy wrapper:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 ```
 
-The output zip is created in `dist/`.
+## Troubleshooting
 
-## Multi-site notes
+- `Missing dependency: playwright ...`
+  Install project dependencies and then bootstrap the browser runtime.
+- `Missing file: Playwright Chromium is not installed ...`
+  In source mode, run `playwright install chromium`. In packaged mode, run
+  `efcheck doctor --install-browser`.
+- `Browser profile not found ...`
+  Run `capture_session` first.
+- `SESSION_EXPIRED`
+  Re-run session capture for the affected site.
+- `Configuration error`
+  Validate `settings.json`, especially booleans and integer fields.
+- No scheduled task visible
+  Re-run `register-task` and approve the UAC elevation prompt.
 
-- Legacy single-site configs still work; they are treated as an Endfield-only setup.
-- `capture_session.py` defaults to `--site endfield`.
-- Guided setup can add Arknights automatically and choose whether it shares the Endfield browser profile.
-- A live check of the logged-in Arknights page currently shows:
-  - GET `https://zonai.skport.com/api/v1/game/attendance?gameId=1&uid=...`
-  - POST `https://zonai.skport.com/api/v1/game/attendance`
-- The default Arknights `attendance_path` is therefore `/api/v1/game/attendance`.
-- If SKPORT changes the endpoint or DOM flow, update `attendance_path` and re-test that site live.
+## Known limitations
 
-## Notes
+- This project depends on SKPORT page structure and request patterns. Site changes can break automation.
+- Arknights and Endfield do not use the same attendance endpoint shape.
+- onefile mode still depends on an external Playwright browser install.
+- Session capture is inherently manual because it depends on an interactive login.
 
-- Keep your local `state/`, `logs/`, and real `config/settings.json` private
-- If the saved session expires, run `capture_session.bat` again
-- Website structure or policies may change over time
-- The `tests/` folder is intentionally tracked to document expected behavior and catch regressions
-- See [`SECURITY.md`](./SECURITY.md) before sharing or publishing anything built from your local workspace
-- This project is unofficial and is not affiliated with Hypergryph or SKPORT
+## Development
+
+See:
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [docs/packaging.md](./docs/packaging.md)
+- [docs/release.md](./docs/release.md)
+- [CHANGELOG.md](./CHANGELOG.md)

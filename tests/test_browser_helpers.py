@@ -16,7 +16,9 @@ class BrowserHelperTests(unittest.TestCase):
         selectors = day_card_selector_candidates(9)
 
         self.assertTrue(any("normalize-space()='Day 9'" in selector for selector in selectors))
-        self.assertTrue(any("contains(normalize-space(), 'Day9')" in selector for selector in selectors))
+        self.assertTrue(
+            any("contains(normalize-space(), 'Day9')" in selector for selector in selectors)
+        )
         self.assertTrue(any("\u7b2c9\u5929" in selector for selector in selectors))
         self.assertTrue(any("\u7b2c 9 \u5929" in selector for selector in selectors))
 

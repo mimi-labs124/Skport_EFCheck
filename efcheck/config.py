@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
-import json
-import re
 
 from efcheck.errors import ConfigError
-
 
 DEFAULT_TIMEZONE = "Asia/Taipei"
 DEFAULT_STATE_PATH = "../state/last_run.json"
@@ -62,7 +61,10 @@ def load_runtime_settings(config_path: Path, default_url: str) -> RuntimeSetting
     return RuntimeSettings(
         timezone=_parse_string(data.get("timezone", DEFAULT_TIMEZONE), field_name="timezone"),
         log_dir=_parse_string(data.get("log_dir", DEFAULT_LOG_DIR), field_name="log_dir"),
-        browser_channel=_parse_string(data.get("browser_channel", DEFAULT_BROWSER_CHANNEL), field_name="browser_channel"),
+        browser_channel=_parse_string(
+            data.get("browser_channel", DEFAULT_BROWSER_CHANNEL),
+            field_name="browser_channel",
+        ),
         headless=_parse_bool(data.get("headless", DEFAULT_HEADLESS), field_name="headless"),
         timeout_seconds=_parse_int(
             data.get("timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
@@ -90,8 +92,9 @@ def find_site(settings: RuntimeSettings, selected_site: str | None) -> SiteSetti
     for site in settings.sites:
         if site.key.casefold() == key or site.name.casefold() == key:
             return site
+    available_sites = ", ".join(site.key for site in settings.sites)
     raise ConfigError(
-        f"Unknown site '{selected_site}'. Available sites: {', '.join(site.key for site in settings.sites)}."
+        f"Unknown site '{selected_site}'. Available sites: {available_sites}."
     )
 
 
@@ -108,7 +111,10 @@ def _parse_sites(data: dict, default_url: str) -> list[SiteSettings]:
                     data.get("attendance_path", derive_attendance_path(signin_url)),
                     field_name="attendance_path",
                 ),
-                state_path=_parse_string(data.get("state_path", DEFAULT_STATE_PATH), field_name="state_path"),
+                state_path=_parse_string(
+                    data.get("state_path", DEFAULT_STATE_PATH),
+                    field_name="state_path",
+                ),
                 browser_profile_dir=_parse_string(
                     data.get("browser_profile_dir", DEFAULT_BROWSER_PROFILE_DIR),
                     field_name="browser_profile_dir",
@@ -127,13 +133,19 @@ def _parse_sites(data: dict, default_url: str) -> list[SiteSettings]:
         if not isinstance(raw_site, dict):
             raise ConfigError(f"{field_prefix} must be an object, not {raw_site!r}.")
 
-        signin_url = _parse_string(raw_site.get("signin_url"), field_name=f"{field_prefix}.signin_url")
+        signin_url = _parse_string(
+            raw_site.get("signin_url"),
+            field_name=f"{field_prefix}.signin_url",
+        )
         derived_key = normalize_site_key(raw_site.get("key"), signin_url)
         if derived_key in seen_keys:
             raise ConfigError(f"Duplicate site key '{derived_key}' in {field_prefix}.")
         seen_keys.add(derived_key)
 
-        name = _parse_string(raw_site.get("name", derived_key.title()), field_name=f"{field_prefix}.name")
+        name = _parse_string(
+            raw_site.get("name", derived_key.title()),
+            field_name=f"{field_prefix}.name",
+        )
         browser_profile_dir = _parse_string(
             raw_site.get("browser_profile_dir", DEFAULT_BROWSER_PROFILE_DIR),
             field_name=f"{field_prefix}.browser_profile_dir",

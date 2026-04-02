@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import configure_sites
+from efcheck.commands import configure_sites
 
 
 class ConfigureSitesTests(unittest.TestCase):
@@ -46,7 +46,10 @@ class ConfigureSitesTests(unittest.TestCase):
             data = json.loads(config_path.read_text(encoding="utf-8"))
 
         self.assertEqual([site["key"] for site in data["sites"]], ["endfield", "arknights"])
-        self.assertEqual(data["sites"][0]["browser_profile_dir"], data["sites"][1]["browser_profile_dir"])
+        self.assertEqual(
+            data["sites"][0]["browser_profile_dir"],
+            data["sites"][1]["browser_profile_dir"],
+        )
         self.assertEqual(data["sites"][1]["attendance_path"], "/api/v1/game/attendance")
 
     def test_configure_sites_adds_arknights_with_separate_profile(self) -> None:
@@ -63,7 +66,10 @@ class ConfigureSitesTests(unittest.TestCase):
             data = json.loads(config_path.read_text(encoding="utf-8"))
 
         self.assertEqual(data["sites"][0]["browser_profile_dir"], "../state/browser-profile")
-        self.assertEqual(data["sites"][1]["browser_profile_dir"], "../state/arknights-browser-profile")
+        self.assertEqual(
+            data["sites"][1]["browser_profile_dir"],
+            "../state/arknights-browser-profile",
+        )
 
 
 if __name__ == "__main__":

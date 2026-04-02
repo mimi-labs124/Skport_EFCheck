@@ -2,14 +2,16 @@
 setlocal
 cd /d "%~dp0"
 
-if exist ".venv\Scripts\python.exe" (
-  ".venv\Scripts\python.exe" sign_in.py %*
+if exist ".\efcheck.exe" (
+  ".\efcheck.exe" run %*
+) else if exist ".venv\Scripts\python.exe" (
+  ".venv\Scripts\python.exe" -m efcheck run %*
 ) else (
   where py >nul 2>nul
   if errorlevel 1 (
-    python sign_in.py %*
+    python -m efcheck run %*
   ) else (
-    py -3 sign_in.py %*
+    py -3 -m efcheck run %*
   )
 )
 endlocal

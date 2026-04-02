@@ -8,15 +8,17 @@ if errorlevel 1 (
   exit /b 1
 )
 
-set "PYTHON_RUNNER="
-if exist ".venv\Scripts\python.exe" (
-  set "PYTHON_RUNNER=.venv\Scripts\python.exe"
+set "EFCHECK_CMD="
+if exist ".\efcheck.exe" (
+  set "EFCHECK_CMD=.\efcheck.exe"
+) else if exist ".venv\Scripts\python.exe" (
+  set "EFCHECK_CMD=.venv\Scripts\python.exe -m efcheck"
 ) else (
   where py >nul 2>nul
   if errorlevel 1 (
-    set "PYTHON_RUNNER=python"
+    set "EFCHECK_CMD=python -m efcheck"
   ) else (
-    set "PYTHON_RUNNER=py -3"
+    set "EFCHECK_CMD=py -3 -m efcheck"
   )
 )
 
@@ -32,19 +34,19 @@ if /I "%INCLUDE_ARKNIGHTS%"=="Y" (
   )
 )
 
-%PYTHON_RUNNER% configure_sites.py %CONFIGURE_ARGS%
+%EFCHECK_CMD% configure-sites %CONFIGURE_ARGS%
 if errorlevel 1 exit /b 1
 
 echo.
 set /p CAPTURE_NOW=Capture your sign-in session now? [Y/N]:
 if /I "%CAPTURE_NOW%"=="Y" (
-  %PYTHON_RUNNER% capture_session.py --site endfield
+  %EFCHECK_CMD% capture-session --site endfield
   if errorlevel 1 exit /b 1
 
   if /I "%INCLUDE_ARKNIGHTS%"=="Y" (
     echo.
     echo Continue with the Arknights page in the same guided capture flow.
-    %PYTHON_RUNNER% capture_session.py --site arknights
+    %EFCHECK_CMD% capture-session --site arknights
     if errorlevel 1 exit /b 1
   )
 )
@@ -52,7 +54,7 @@ if /I "%CAPTURE_NOW%"=="Y" (
 echo.
 set /p REGISTER_TASK=Register the Windows logon scheduled task now? [Y/N]:
 if /I "%REGISTER_TASK%"=="Y" (
-  call ".\register_logon_task.bat" --no-pause
+  %EFCHECK_CMD% register-task --no-pause
   if errorlevel 1 exit /b 1
 )
 

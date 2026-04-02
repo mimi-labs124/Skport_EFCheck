@@ -1,5 +1,5 @@
 param(
-    [string]$TaskName = "EFCheck Endfield Sign-In",
+    [string]$TaskName = "EFCheck Sign-In",
     [int]$DelaySeconds = 90,
     [switch]$NoPause
 )
@@ -16,30 +16,26 @@ function Get-ScheduledLaunchArguments {
     param(
         [string]$ScriptRoot
     )
-
-    $signInPath = Join-Path $ScriptRoot "sign_in.py"
-    if (-not (Test-Path $signInPath)) {
-        throw "Sign-in script not found: $signInPath"
-    }
-
     $escapedScriptRoot = $ScriptRoot.Replace("'", "''")
-    $escapedSignInPath = $signInPath.Replace("'", "''")
-
     $command = @"
 Set-Location -LiteralPath '$escapedScriptRoot'
+if (Test-Path '.\efcheck.exe') {
+    & '.\efcheck.exe' run
+    exit `$LASTEXITCODE
+}
 if (Test-Path '.\.venv\Scripts\pythonw.exe') {
-    & '.\.venv\Scripts\pythonw.exe' '$escapedSignInPath'
+    & '.\.venv\Scripts\pythonw.exe' -m efcheck run
     exit `$LASTEXITCODE
 }
 if (Test-Path '.\.venv\Scripts\python.exe') {
-    & '.\.venv\Scripts\python.exe' '$escapedSignInPath'
+    & '.\.venv\Scripts\python.exe' -m efcheck run
     exit `$LASTEXITCODE
 }
 if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 '$escapedSignInPath'
+    & py -3 -m efcheck run
     exit `$LASTEXITCODE
 }
-& python '$escapedSignInPath'
+& python -m efcheck run
 exit `$LASTEXITCODE
 "@
 

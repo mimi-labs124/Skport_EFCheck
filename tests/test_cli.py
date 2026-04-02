@@ -1,0 +1,63 @@
+import io
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+from unittest.mock import patch
+
+from efcheck import cli
+from efcheck.errors import ConfigError, InteractionError
+
+
+class CliTests(unittest.TestCase):
+    def test_top_level_help_lists_expected_commands(self) -> None:
+        stdout = io.StringIO()
+        with self.assertRaises(SystemExit) as cm, redirect_stdout(stdout):
+            cli.main(["--help"])
+
+        self.assertEqual(cm.exception.code, 0)
+        output = stdout.getvalue()
+        self.assertIn("run", output)
+        self.assertIn("capture-session", output)
+        self.assertIn("configure-sites", output)
+        self.assertIn("register-task", output)
+        self.assertIn("doctor", output)
+        self.assertIn("paths", output)
+        self.assertIn("package", output)
+
+    def test_paths_json_command_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stdout = io.StringIO()
+            exit_code = cli.main(
+                [
+                    "--base-dir",
+                    str(Path(temp_dir) / "base"),
+                    "paths",
+                    "--json",
+                ],
+                stdout=stdout,
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn('"base_dir"', stdout.getvalue())
+
+    def test_cli_reports_configuration_errors_cleanly(self) -> None:
+        stderr = io.StringIO()
+
+        with patch("efcheck.commands.run.handle_command", side_effect=ConfigError("bad config")):
+            exit_code = cli.main(["run"], stderr=stderr)
+
+        self.assertEqual(exit_code, 30)
+        self.assertIn("Configuration error: bad config", stderr.getvalue())
+
+    def test_cli_reports_runtime_errors_cleanly(self) -> None:
+        stderr = io.StringIO()
+
+        with patch(
+            "efcheck.commands.run.handle_command",
+            side_effect=InteractionError("click failed"),
+        ):
+            exit_code = cli.main(["run"], stderr=stderr)
+
+        self.assertEqual(exit_code, 10)
+        self.assertIn("Runtime error: click failed", stderr.getvalue())
