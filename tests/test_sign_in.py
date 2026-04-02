@@ -3,7 +3,7 @@ import json
 import tempfile
 import unittest
 from argparse import Namespace
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -205,6 +205,7 @@ class SignInTests(unittest.TestCase):
                 message, status = sign_in.run_browser_sign_in(
                     profile_dir=profile_dir,
                     signin_url="https://example.com",
+                    attendance_path="/web/v1/game/endfield/attendance",
                     headless=True,
                     browser_channel="",
                     timeout_seconds=1,
@@ -212,6 +213,114 @@ class SignInTests(unittest.TestCase):
 
         self.assertEqual(status, SUCCESS)
         self.assertIn("Day 1", message)
+
+    def test_main_dry_run_reports_each_enabled_site(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "sites": [
+                            {
+                                "key": "endfield",
+                                "name": "Endfield",
+                                "signin_url": "https://game.skport.com/endfield/sign-in",
+                                "attendance_path": "/web/v1/game/endfield/attendance",
+                                "state_path": "./endfield-state.json",
+                                "browser_profile_dir": "./shared-profile",
+                            },
+                            {
+                                "key": "arknights",
+                                "name": "Arknights",
+                                "signin_url": "https://game.skport.com/arknights/sign-in",
+                                "attendance_path": "/web/v1/game/arknights/attendance",
+                                "state_path": "./arknights-state.json",
+                                "browser_profile_dir": "./shared-profile",
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+            with patch.object(
+                sign_in,
+                "parse_args",
+                return_value=Namespace(config=str(config_path), dry_run=True, force=False),
+            ), patch.object(sign_in, "load_timezone", return_value=timezone.utc), redirect_stdout(stdout):
+                exit_code = sign_in.main()
+
+        self.assertEqual(exit_code, 0)
+        output = stdout.getvalue()
+        self.assertIn("[Endfield] Dry run only.", output)
+        self.assertIn("[Arknights] Dry run only.", output)
+
+    def test_main_uses_per_site_state_and_attendance_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "sites": [
+                            {
+                                "key": "endfield",
+                                "name": "Endfield",
+                                "signin_url": "https://game.skport.com/endfield/sign-in",
+                                "attendance_path": "/web/v1/game/endfield/attendance",
+                                "state_path": "./endfield-state.json",
+                                "browser_profile_dir": "./shared-profile",
+                            },
+                            {
+                                "key": "arknights",
+                                "name": "Arknights",
+                                "signin_url": "https://game.skport.com/arknights/sign-in",
+                                "attendance_path": "/web/v1/game/arknights/attendance",
+                                "state_path": "./arknights-state.json",
+                                "browser_profile_dir": "./shared-profile",
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            captured_state_paths = []
+            captured_attendance_paths = []
+
+            def fake_load_state(path):
+                captured_state_paths.append(path.name)
+                return sign_in.RunGateState()
+
+            def fake_run_browser_sign_in(**kwargs):
+                captured_attendance_paths.append(kwargs["attendance_path"])
+                return "SUCCESS: mocked.", SUCCESS
+
+            with patch.object(
+                sign_in,
+                "parse_args",
+                return_value=Namespace(config=str(config_path), dry_run=False, force=True),
+            ), patch.object(sign_in, "load_timezone", return_value=timezone.utc), patch.object(
+                sign_in,
+                "load_state",
+                side_effect=fake_load_state,
+            ), patch.object(
+                sign_in,
+                "run_browser_sign_in",
+                side_effect=fake_run_browser_sign_in,
+            ), patch.object(
+                sign_in,
+                "notify_status",
+                return_value=None,
+            ):
+                exit_code = sign_in.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(captured_state_paths, ["endfield-state.json", "arknights-state.json"])
+        self.assertEqual(
+            captured_attendance_paths,
+            ["/web/v1/game/endfield/attendance", "/web/v1/game/arknights/attendance"],
+        )
 
     def test_main_reports_state_file_errors_separately(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import sys
 
-from efcheck.config import load_runtime_settings, resolve_path
+from efcheck.config import DEFAULT_ENDFIELD_KEY, find_site, load_runtime_settings, resolve_path
 from efcheck.errors import ConfigError
 
 
@@ -17,8 +17,9 @@ def main() -> int:
     config_path = Path(args.config).resolve()
     try:
         settings = load_runtime_settings(config_path, DEFAULT_URL)
-        profile_dir = resolve_path(config_path, settings.browser_profile_dir)
-        signin_url = settings.signin_url
+        site = find_site(settings, args.site)
+        profile_dir = resolve_path(config_path, site.browser_profile_dir)
+        signin_url = site.signin_url
         channel = settings.browser_channel
 
         try:
@@ -58,6 +59,11 @@ def main() -> int:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Capture a browser session for EFCheck.")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to settings.json")
+    parser.add_argument(
+        "--site",
+        default=DEFAULT_ENDFIELD_KEY,
+        help="Site key or name to capture a session for.",
+    )
     return parser.parse_args()
 
 if __name__ == "__main__":

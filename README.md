@@ -72,11 +72,37 @@ copy config\settings.example.json config\settings.json
 Main settings:
 
 - `timezone`: date boundary used for daily retry limits
-- `browser_profile_dir`: local folder for the dedicated browser profile
 - `browser_channel`: leave empty to use the Playwright-managed Chromium build
 - `headless`: whether the sign-in browser runs without a visible window
 - `timeout_seconds`: timeout for page and network waits
 - `max_attempts_per_day`: default `2`
+- `sites`: list of sign-in targets to process in one run
+
+Each site entry supports:
+
+- `key`: stable site identifier used by `capture_session.py --site`
+- `name`: label used in logs and console output
+- `enabled`: whether this site is included in scheduled/manual runs
+- `signin_url`: SKPORT sign-in page for the game
+- `attendance_path`: attendance API path used to validate the run
+- `state_path`: per-site retry gate file
+- `browser_profile_dir`: browser profile directory for shared or separate sessions
+
+To add Arknights with the same login session, add a second entry that points to the same `browser_profile_dir`:
+
+```json
+{
+  "key": "arknights",
+  "name": "Arknights",
+  "enabled": true,
+  "signin_url": "https://game.skport.com/arknights/sign-in",
+  "attendance_path": "/web/v1/game/arknights/attendance",
+  "state_path": "../state/arknights-last_run.json",
+  "browser_profile_dir": "../state/browser-profile"
+}
+```
+
+If you want Arknights to keep a separate session, change only `browser_profile_dir` to a different folder.
 
 ## Runtime behavior
 
@@ -84,11 +110,12 @@ Main settings:
 - `ALREADY_DONE` also stops further retries
 - Failed or expired-session runs can use the second daily attempt
 - If the session looks expired, EFCheck shows a Windows desktop notification
+- Enabled sites run sequentially in one invocation, each with its own retry gate file
 
 ## Included scripts
 
 - [`sign_in.py`](./sign_in.py): main sign-in runner
-- [`capture_session.py`](./capture_session.py): one-time login and session capture
+- [`capture_session.py`](./capture_session.py): one-time login and session capture (`--site arknights` to target another configured site)
 - [`install_efcheck.bat`](./install_efcheck.bat): guided setup for installation, session capture, and task registration
 - [`setup_windows.bat`](./setup_windows.bat): one-click Windows setup
 - [`capture_session.bat`](./capture_session.bat): one-click session capture
@@ -107,6 +134,13 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 ```
 
 The output zip is created in `dist/`.
+
+## Multi-site notes
+
+- Legacy single-site configs still work; they are treated as an Endfield-only setup.
+- `capture_session.py` defaults to `--site endfield`.
+- Arknights support assumes its attendance API path follows `/web/v1/game/arknights/attendance`.
+- If SKPORT uses a different endpoint or DOM flow for Arknights, adjust `attendance_path` and re-test that site live.
 
 ## Notes
 

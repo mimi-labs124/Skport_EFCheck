@@ -38,7 +38,7 @@ install_efcheck.bat
 capture_session.bat
 ```
 
-3. 在開啟的瀏覽器中完成登入，並確認畫面已進入 Endfield 簽到頁。
+3. 在開啟的瀏覽器中完成登入，並確認畫面已進入你要擷取的簽到頁。
 
 4. 回到終端機，按 Enter 儲存 session。
 
@@ -72,11 +72,37 @@ copy config\settings.example.json config\settings.json
 主要設定如下：
 
 - `timezone`：每日重試次數的日期判定時區
-- `browser_profile_dir`：專用瀏覽器 profile 的本機路徑
 - `browser_channel`：留空時使用 Playwright 管理的 Chromium
 - `headless`：是否以無視窗模式執行
 - `timeout_seconds`：頁面與網路等待逾時秒數
 - `max_attempts_per_day`：預設為 `2`
+- `sites`：一次執行時要處理的簽到站點清單
+
+每個 site 項目支援：
+
+- `key`：穩定站點代號，`capture_session.py --site` 會用到
+- `name`：主控台與 log 顯示名稱
+- `enabled`：是否納入手動／排程簽到
+- `signin_url`：遊戲的 SKPORT 簽到頁
+- `attendance_path`：用來驗證簽到結果的 attendance API path
+- `state_path`：此站點自己的每日重試 gate 檔案
+- `browser_profile_dir`：此站點使用的瀏覽器 profile 目錄，可共用也可分開
+
+如果你要新增 Arknights 並共用同一組登入 session，可以加上第二個項目並沿用同一個 `browser_profile_dir`：
+
+```json
+{
+  "key": "arknights",
+  "name": "Arknights",
+  "enabled": true,
+  "signin_url": "https://game.skport.com/arknights/sign-in",
+  "attendance_path": "/web/v1/game/arknights/attendance",
+  "state_path": "../state/arknights-last_run.json",
+  "browser_profile_dir": "../state/browser-profile"
+}
+```
+
+如果你要讓 Arknights 分開保存 session，只要把 `browser_profile_dir` 換成另一個資料夾即可。
 
 ## 執行邏輯
 
@@ -84,11 +110,12 @@ copy config\settings.example.json config\settings.json
 - 如果結果是 `ALREADY_DONE`，也不再重試
 - 若失敗或 session 過期，當天還可再使用第二次嘗試
 - 如果判斷 session 可能失效，EFCheck 會顯示 Windows 桌面通知
+- 所有啟用的 site 會在同一次執行中依序處理，彼此使用不同的每日重試 gate 檔案
 
 ## 內含腳本
 
 - [`sign_in.py`](./sign_in.py)：主簽到程式
-- [`capture_session.py`](./capture_session.py)：一次性登入與 session 擷取
+- [`capture_session.py`](./capture_session.py)：一次性登入與 session 擷取（例如 `--site arknights`）
 - [`install_efcheck.bat`](./install_efcheck.bat)：引導式完整安裝流程
 - [`setup_windows.bat`](./setup_windows.bat)：Windows 一鍵安裝
 - [`capture_session.bat`](./capture_session.bat)：一鍵擷取 session
@@ -107,6 +134,13 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 ```
 
 輸出會建立在 `dist/`。
+
+## 多站點注意事項
+
+- 舊的單站點設定仍可使用，系統會把它視為只有 Endfield 的設定。
+- `capture_session.py` 預設等同於 `--site endfield`。
+- Arknights 目前預設假設 attendance API path 為 `/web/v1/game/arknights/attendance`。
+- 如果 SKPORT 對 Arknights 使用不同的 API 或不同的頁面流程，需要調整 `attendance_path`，並實際對該站點做一次 live 驗證。
 
 ## 注意事項
 

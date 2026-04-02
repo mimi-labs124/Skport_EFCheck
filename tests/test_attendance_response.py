@@ -28,6 +28,15 @@ class AttendanceResponseTests(unittest.TestCase):
             )
         )
 
+    def test_matches_custom_attendance_endpoint(self) -> None:
+        self.assertTrue(
+            is_attendance_response(
+                "https://zonai.skport.com/web/v1/game/arknights/attendance",
+                "GET",
+                "/web/v1/game/arknights/attendance",
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

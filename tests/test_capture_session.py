@@ -18,7 +18,7 @@ class CaptureSessionTests(unittest.TestCase):
             with patch.object(
                 capture_session,
                 "parse_args",
-                return_value=Namespace(config=str(config_path)),
+                return_value=Namespace(config=str(config_path), site="endfield"),
             ), redirect_stderr(stderr):
                 exit_code = capture_session.main()
 
@@ -33,7 +33,7 @@ class CaptureSessionTests(unittest.TestCase):
             with patch.object(
                 capture_session,
                 "parse_args",
-                return_value=Namespace(config=str(config_path)),
+                return_value=Namespace(config=str(config_path), site="endfield"),
             ), redirect_stderr(stderr):
                 exit_code = capture_session.main()
 
@@ -51,7 +51,7 @@ class CaptureSessionTests(unittest.TestCase):
             with patch.object(
                 capture_session,
                 "parse_args",
-                return_value=Namespace(config=str(config_path)),
+                return_value=Namespace(config=str(config_path), site="endfield"),
             ), redirect_stderr(stderr):
                 exit_code = capture_session.main()
 
@@ -65,7 +65,7 @@ class CaptureSessionTests(unittest.TestCase):
                 json.dumps(
                     {
                         "browser_profile_dir": "../state/browser-profile",
-                        "signin_url": "https://example.com",
+                        "signin_url": "https://game.skport.com/endfield/sign-in",
                     }
                 ),
                 encoding="utf-8",
@@ -83,7 +83,7 @@ class CaptureSessionTests(unittest.TestCase):
             with patch.object(
                 capture_session,
                 "parse_args",
-                return_value=Namespace(config=str(config_path)),
+                return_value=Namespace(config=str(config_path), site="endfield"),
             ), patch("builtins.__import__", side_effect=fake_import), redirect_stderr(
                 stderr
             ), redirect_stdout(stdout):
@@ -91,6 +91,33 @@ class CaptureSessionTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 20)
         self.assertIn("Missing dependency", stderr.getvalue())
+
+    def test_main_reports_unknown_site_as_configuration_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "sites": [
+                            {
+                                "key": "endfield",
+                                "signin_url": "https://game.skport.com/endfield/sign-in",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            stderr = io.StringIO()
+            with patch.object(
+                capture_session,
+                "parse_args",
+                return_value=Namespace(config=str(config_path), site="arknights"),
+            ), redirect_stderr(stderr):
+                exit_code = capture_session.main()
+
+        self.assertEqual(exit_code, 30)
+        self.assertIn("Unknown site", stderr.getvalue())
 
 
 if __name__ == "__main__":

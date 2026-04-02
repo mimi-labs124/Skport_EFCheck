@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 import sys
 
 from efcheck.attendance_response import is_attendance_response
@@ -12,7 +13,7 @@ from efcheck.browser_helpers import (
     day_card_selector_candidates,
     day_label_candidates,
 )
-from efcheck.config import load_runtime_settings, resolve_path
+from efcheck.config import SiteSettings, load_runtime_settings, resolve_path
 from efcheck.daily_gate import RunGateState, load_state, mark_attempt, should_run_today
 from efcheck.errors import ConfigError, InteractionError, StateFileError
 from efcheck.notifications import notify_status
@@ -36,66 +37,80 @@ def main() -> int:
         except RuntimeError as exc:
             raise ConfigError(str(exc)) from exc
         now = datetime.now(timezone)
-        state_path = resolve_path(config_path, settings.state_path)
         log_dir = resolve_path(config_path, settings.log_dir)
-        profile_dir = resolve_path(config_path, settings.browser_profile_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
         today = now.date().isoformat()
-        previous_state = load_state(state_path)
+        exit_code = 0
 
-        if not args.force:
-            allowed, previous_state = should_run_today(
-                state_path,
-                today,
-                max_attempts_per_day=settings.max_attempts_per_day,
-            )
-            if not allowed:
-                message = (
-                    f"Skipped: already attempted on {previous_state.last_attempt_date} "
-                    f"with status {previous_state.last_status} "
-                    f"({previous_state.attempts_today}/{settings.max_attempts_per_day} attempts today)."
+        for site in settings.sites:
+            if not site.enabled:
+                continue
+
+            state_path = resolve_path(config_path, site.state_path)
+            profile_dir = resolve_path(config_path, site.browser_profile_dir)
+            previous_state = load_state(state_path)
+
+            if not args.force:
+                allowed, previous_state = should_run_today(
+                    state_path,
+                    today,
+                    max_attempts_per_day=settings.max_attempts_per_day,
                 )
+                if not allowed:
+                    message = prefix_site_message(
+                        site,
+                        (
+                            f"Skipped: already attempted on {previous_state.last_attempt_date} "
+                            f"with status {previous_state.last_status} "
+                            f"({previous_state.attempts_today}/{settings.max_attempts_per_day} attempts today)."
+                        ),
+                    )
+                    write_log(log_dir, now, "SKIPPED_ALREADY_ATTEMPTED", message)
+                    print(message)
+                    continue
+
+            if args.dry_run:
+                message = summarize_browser_run(settings, site, profile_dir)
+                write_log(log_dir, now, "DRY_RUN", message)
+                print(message)
+                continue
+
+            outcome_message, status = run_browser_sign_in(
+                profile_dir=profile_dir,
+                signin_url=site.signin_url,
+                attendance_path=site.attendance_path,
+                headless=settings.headless,
+                browser_channel=settings.browser_channel,
+                timeout_seconds=settings.timeout_seconds,
+            )
+            prefixed_message = prefix_site_message(site, outcome_message)
+            mark_attempt(
+                state_path,
+                RunGateState(
+                    last_attempt_date=today,
+                    last_status=status,
+                    attempts_today=next_attempt_count(previous_state, today),
+                    updated_at=now.isoformat(),
+                ),
+            )
+            write_log(log_dir, now, status, prefixed_message)
+            notification_warning = notify_status(
+                status,
+                f"EFCheck session expired: {site.name}",
+                f"The saved sign-in session for {site.name} needs to be refreshed. Run capture_session.bat --site {site.key}.",
+            )
+            if notification_warning:
                 write_log(
                     log_dir,
                     now,
-                    "SKIPPED_ALREADY_ATTEMPTED",
-                    message,
+                    "NOTIFICATION_WARNING",
+                    prefix_site_message(site, notification_warning),
                 )
-                print(message)
-                return 0
+            print(prefixed_message)
+            if status not in {SUCCESS, ALREADY_DONE}:
+                exit_code = 10
 
-        if args.dry_run:
-            message = summarize_browser_run(settings, profile_dir)
-            write_log(log_dir, now, "DRY_RUN", message)
-            print(message)
-            return 0
-
-        outcome_message, status = run_browser_sign_in(
-            profile_dir=profile_dir,
-            signin_url=settings.signin_url,
-            headless=settings.headless,
-            browser_channel=settings.browser_channel,
-            timeout_seconds=settings.timeout_seconds,
-        )
-        mark_attempt(
-            state_path,
-            RunGateState(
-                last_attempt_date=today,
-                last_status=status,
-                attempts_today=next_attempt_count(previous_state, today),
-                updated_at=now.isoformat(),
-            ),
-        )
-        write_log(log_dir, now, status, outcome_message)
-        notification_warning = notify_status(
-            status,
-            "EFCheck session expired",
-            "The saved sign-in session needs to be refreshed. Run capture_session.bat.",
-        )
-        if notification_warning:
-            write_log(log_dir, now, "NOTIFICATION_WARNING", notification_warning)
-        print(outcome_message)
-        return 0 if status in {SUCCESS, ALREADY_DONE} else 10
+        return exit_code
     except FileNotFoundError as exc:
         print(f"Missing file: {exc}", file=sys.stderr)
         return 30
@@ -135,13 +150,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def summarize_browser_run(settings, profile_dir: Path) -> str:
+def summarize_browser_run(settings, site: SiteSettings, profile_dir: Path) -> str:
     return (
-        "Dry run only. Browser sign-in is configured for "
-        f"{settings.signin_url} | "
+        f"[{site.name}] Dry run only. Browser sign-in is configured for "
+        f"{site.signin_url} | "
         f"profile_dir={profile_dir} | "
         f"headless={settings.headless} | "
-        f"channel={settings.browser_channel}"
+        f"channel={settings.browser_channel} | "
+        f"attendance_path={site.attendance_path}"
     )
 
 
@@ -149,6 +165,7 @@ def run_browser_sign_in(
     *,
     profile_dir: Path,
     signin_url: str,
+    attendance_path: str,
     headless: bool,
     browser_channel: str,
     timeout_seconds: int,
@@ -182,6 +199,7 @@ def run_browser_sign_in(
                 lambda response: is_attendance_response(
                     response.url,
                     response.request.method,
+                    attendance_path,
                 ),
                 timeout=timeout_ms,
             ) as attendance_info:
@@ -217,7 +235,7 @@ def run_browser_sign_in(
 
             with page.expect_response(
                 lambda response: response.request.method == "POST"
-                and response.url.rstrip("/").endswith("/web/v1/game/endfield/attendance"),
+                and urlparse(response.url).path.rstrip("/") == attendance_path.rstrip("/"),
                 timeout=timeout_ms,
             ) as post_info:
                 click_day_tile(page, state.day_number)
@@ -232,6 +250,7 @@ def run_browser_sign_in(
                 lambda response: is_attendance_response(
                     response.url,
                     response.request.method,
+                    attendance_path,
                 ),
                 timeout=timeout_ms,
             ) as refreshed_attendance_info:
@@ -337,6 +356,10 @@ def next_attempt_count(previous_state: RunGateState, today: str) -> int:
     if previous_state.last_attempt_date == today:
         return previous_state.attempts_today + 1
     return 1
+
+
+def prefix_site_message(site: SiteSettings, message: str) -> str:
+    return f"[{site.name}] {message}"
 
 
 def write_log(log_dir: Path, now: datetime, status: str, message: str) -> None:
