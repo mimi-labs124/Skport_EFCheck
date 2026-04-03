@@ -3,13 +3,28 @@ from pathlib import Path
 
 
 class SetupScriptTests(unittest.TestCase):
+    def test_batch_wrappers_are_saved_without_utf8_bom(self) -> None:
+        for path in [
+            Path("setup_windows.bat"),
+            Path("install_skport_signin.bat"),
+            Path("capture_session.bat"),
+            Path("register_logon_task.bat"),
+            Path("run_signin.bat"),
+        ]:
+            contents = path.read_bytes()
+            self.assertFalse(
+                contents.startswith(b"\xef\xbb\xbf"),
+                f"{path} should not start with a UTF-8 BOM",
+            )
+
     def test_setup_windows_has_fail_fast_guards_for_dependency_steps(self) -> None:
         script = Path("setup_windows.bat").read_text(encoding="utf-8")
 
-        self.assertIn("python -m pip install -e .", script)
+        self.assertIn('".venv\\Scripts\\python.exe" -m pip install -e .', script)
         self.assertIn("doctor --install-browser", script)
         self.assertGreaterEqual(script.count("if errorlevel 1 exit /b 1"), 3)
         self.assertIn("%SKPORT_SIGNIN_CMD% init", script)
+        self.assertNotIn("activate.bat", script)
 
     def test_register_task_uses_hidden_powershell_runner(self) -> None:
         script = Path("register_logon_task.ps1").read_text(encoding="utf-8")
@@ -55,4 +70,3 @@ class SetupScriptTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal
 cd /d "%~dp0"
 
@@ -15,4 +15,3 @@ if exist ".\skport_signin.exe" (
   )
 )
 endlocal
-

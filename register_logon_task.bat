@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal
 cd /d "%~dp0"
 
@@ -30,4 +30,3 @@ if not "%~1"=="--no-pause" (
 
 endlocal
 exit /b %EXIT_CODE%
-

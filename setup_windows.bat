@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal
 cd /d "%~dp0"
 
@@ -22,11 +22,9 @@ if exist ".\skport_signin.exe" (
     if errorlevel 1 exit /b 1
   )
 
-  call ".venv\Scripts\activate.bat"
+  ".venv\Scripts\python.exe" -m pip install --upgrade pip
   if errorlevel 1 exit /b 1
-  python -m pip install --upgrade pip
-  if errorlevel 1 exit /b 1
-  python -m pip install -e .
+  ".venv\Scripts\python.exe" -m pip install -e .
   if errorlevel 1 exit /b 1
 
   set "SKPORT_SIGNIN_CMD=.venv\Scripts\python.exe -m skport_signin"
@@ -43,4 +41,3 @@ if not defined NO_PAUSE (
   pause
 )
 endlocal
-
