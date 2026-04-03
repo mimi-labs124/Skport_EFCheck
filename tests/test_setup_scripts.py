@@ -29,7 +29,14 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn("Share Endfield browser profile with Arknights?", script)
         self.assertIn("--enable-site endfield", script)
         self.assertIn("--enable-site arknights", script)
+        self.assertIn("--disable-site endfield", script)
+        self.assertIn("--disable-site arknights", script)
         self.assertIn(" configure-sites ", script)
+        self.assertNotIn(
+            'set "CONFIGURE_ARGS=--disable-site endfield --disable-site arknights"',
+            script,
+        )
+        self.assertIn("Failed while updating site configuration.", script)
         self.assertIn(" capture-session --site endfield", script)
         self.assertIn(" capture-session --site arknights", script)
 
@@ -48,5 +55,4 @@ class SetupScriptTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
 
