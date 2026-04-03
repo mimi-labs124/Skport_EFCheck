@@ -1,6 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+set "VENV_PY=.venv\Scripts\python.exe"
 
 set "EXTRA_ARGS=register-task"
 if /I "%~1"=="--no-pause" (
@@ -10,17 +11,20 @@ if /I "%~1"=="--no-pause" (
 if exist ".\skport_signin.exe" (
   ".\skport_signin.exe" %EXTRA_ARGS%
   set "EXIT_CODE=%ERRORLEVEL%"
-) else if exist ".venv\Scripts\python.exe" (
-  ".venv\Scripts\python.exe" -m skport_signin %EXTRA_ARGS%
-  set "EXIT_CODE=%ERRORLEVEL%"
 ) else (
-  where py >nul 2>nul
-  if errorlevel 1 (
-    python -m skport_signin %EXTRA_ARGS%
+  call :has_working_venv
+  if not errorlevel 1 (
+    "%VENV_PY%" -m skport_signin %EXTRA_ARGS%
     set "EXIT_CODE=%ERRORLEVEL%"
   ) else (
-    py -3 -m skport_signin %EXTRA_ARGS%
-    set "EXIT_CODE=%ERRORLEVEL%"
+    where py >nul 2>nul
+    if errorlevel 1 (
+      python -m skport_signin %EXTRA_ARGS%
+      set "EXIT_CODE=%ERRORLEVEL%"
+    ) else (
+      py -3 -m skport_signin %EXTRA_ARGS%
+      set "EXIT_CODE=%ERRORLEVEL%"
+    )
   )
 )
 
@@ -30,3 +34,9 @@ if not "%~1"=="--no-pause" (
 
 endlocal
 exit /b %EXIT_CODE%
+goto :eof
+
+:has_working_venv
+if not exist "%VENV_PY%" exit /b 1
+"%VENV_PY%" -c "import sys" >nul 2>nul
+exit /b %ERRORLEVEL%

@@ -1,18 +1,28 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+set "VENV_PY=.venv\Scripts\python.exe"
 
 if exist ".\skport_signin.exe" (
   ".\skport_signin.exe" capture-session %*
-) else if exist ".venv\Scripts\python.exe" (
-  ".venv\Scripts\python.exe" -m skport_signin capture-session %*
 ) else (
-  where py >nul 2>nul
-  if errorlevel 1 (
-    python -m skport_signin capture-session %*
+  call :has_working_venv
+  if not errorlevel 1 (
+    "%VENV_PY%" -m skport_signin capture-session %*
   ) else (
-    py -3 -m skport_signin capture-session %*
+    where py >nul 2>nul
+    if errorlevel 1 (
+      python -m skport_signin capture-session %*
+    ) else (
+      py -3 -m skport_signin capture-session %*
+    )
   )
 )
 pause
 endlocal
+goto :eof
+
+:has_working_venv
+if not exist "%VENV_PY%" exit /b 1
+"%VENV_PY%" -c "import sys" >nul 2>nul
+exit /b %ERRORLEVEL%

@@ -20,11 +20,17 @@ class SetupScriptTests(unittest.TestCase):
     def test_setup_windows_has_fail_fast_guards_for_dependency_steps(self) -> None:
         script = Path("setup_windows.bat").read_text(encoding="utf-8")
 
-        self.assertIn('".venv\\Scripts\\python.exe" -m pip install -e .', script)
+        self.assertIn('"%VENV_PY%" -m pip install -e .', script)
         self.assertIn("doctor --install-browser", script)
         self.assertGreaterEqual(script.count("if errorlevel 1 exit /b 1"), 3)
         self.assertIn("%SKPORT_SIGNIN_CMD% init", script)
         self.assertNotIn("activate.bat", script)
+        self.assertIn("Existing virtual environment is invalid. Recreating .venv...", script)
+        self.assertIn('"%VENV_PY%" -c "import sys" >nul 2>nul', script)
+        self.assertIn("call :resolve_python_cmd", script)
+        self.assertIn('%USERPROFILE%\\AppData\\Local', script)
+        self.assertIn('%LOCAL_APPDATA_DIR%\\Programs\\Python\\Launcher\\py.exe', script)
+        self.assertIn("rmdir /s /q \".venv\"", script)
 
     def test_register_task_uses_hidden_powershell_runner(self) -> None:
         script = Path("register_logon_task.ps1").read_text(encoding="utf-8")
@@ -51,6 +57,7 @@ class SetupScriptTests(unittest.TestCase):
             'set "CONFIGURE_ARGS=--disable-site endfield --disable-site arknights"',
             script,
         )
+        self.assertIn("call :has_working_venv", script)
         self.assertIn("Failed while updating site configuration.", script)
         self.assertIn(" capture-session --site endfield", script)
         self.assertIn(" capture-session --site arknights", script)
@@ -66,6 +73,9 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn("-m skport_signin capture-session", capture_script)
         self.assertIn("skport_signin.exe", register_script)
         self.assertIn("register-task", register_script)
+        self.assertIn("call :has_working_venv", run_script)
+        self.assertIn("call :has_working_venv", capture_script)
+        self.assertIn("call :has_working_venv", register_script)
 
 
 if __name__ == "__main__":
