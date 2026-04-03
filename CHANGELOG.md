@@ -1,6 +1,6 @@
-# Changelog
+﻿# Changelog
 
-All notable changes to EFCheck will be documented in this file.
+All notable changes to Skport_Signin will be documented in this file.
 
 The format is based on Keep a Changelog and uses a simple `major.minor.patch` versioning scheme.
 
@@ -13,7 +13,7 @@ The format is based on Keep a Changelog and uses a simple `major.minor.patch` ve
 
 - Catalog-driven known-site configuration that writes both `endfield` and `arknights` into config with per-site `enabled` flags
 - Generic `configure-sites` CLI flags for enabling/disabling known sites instead of a hardcoded Arknights toggle
-- Release checksum output (`EFCheck-SHA256.txt`) alongside Windows release archives
+- Release checksum output (`Skport_Signin-SHA256.txt`) alongside Windows release archives
 
 ### Changed
 
@@ -26,7 +26,7 @@ The format is based on Keep a Changelog and uses a simple `major.minor.patch` ve
 
 ### Added
 
-- Python package metadata with `efcheck` console entry point
+- Python package metadata with `skport_signin` console entry point
 - Unified CLI with `run`, `capture-session`, `configure-sites`, `register-task`, `doctor`, `paths`, `package onedir`, and `package onefile`
 - Centralized source-mode vs packaged-mode path resolution
 - Config initialization and doctor commands
@@ -38,6 +38,7 @@ The format is based on Keep a Changelog and uses a simple `major.minor.patch` ve
 
 - Moved core runtime behavior behind package command modules
 - Converted root Python entry scripts into thin legacy shims
-- Updated batch wrappers to prefer `efcheck.exe` and otherwise call `python -m efcheck`
+- Updated batch wrappers to prefer `skport_signin.exe` and otherwise call `python -m skport_signin`
 - Updated task registration to schedule the unified CLI run path
 - Improved repo documentation for source mode, packaged mode, and sensitive data handling
+

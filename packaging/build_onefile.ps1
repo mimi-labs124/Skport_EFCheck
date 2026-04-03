@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Python = "python"
 )
 
@@ -9,8 +9,9 @@ Push-Location $projectRoot
 try {
     & $Python -m pip install --upgrade pip
     & $Python -m pip install -e ".[dev]"
-    & $Python -m efcheck package onefile
+    & $Python -m skport_signin package onefile
 }
 finally {
     Pop-Location
 }
+

@@ -1,7 +1,7 @@
-import unittest
+﻿import unittest
 from unittest.mock import patch
 
-from efcheck.notifications import notify_status, should_notify_status
+from skport_signin.notifications import notify_status, should_notify_status
 
 
 class NotificationTests(unittest.TestCase):
@@ -12,14 +12,14 @@ class NotificationTests(unittest.TestCase):
         self.assertFalse(should_notify_status("SUCCESS"))
 
     def test_notification_reports_missing_powershell_executable(self) -> None:
-        with patch("efcheck.notifications.shutil.which", return_value=None):
+        with patch("skport_signin.notifications.shutil.which", return_value=None):
             message = notify_status("SESSION_EXPIRED", "title", "message")
 
         self.assertIn("no PowerShell executable", message)
 
     def test_notification_reports_subprocess_failures(self) -> None:
-        with patch("efcheck.notifications.shutil.which", return_value="powershell"), patch(
-            "efcheck.notifications.subprocess.run",
+        with patch("skport_signin.notifications.shutil.which", return_value="powershell"), patch(
+            "skport_signin.notifications.subprocess.run",
             side_effect=FileNotFoundError("powershell"),
         ):
             message = notify_status("SESSION_EXPIRED", "title", "message")
@@ -31,8 +31,8 @@ class NotificationTests(unittest.TestCase):
             returncode = 1
             stderr = "toast failed"
 
-        with patch("efcheck.notifications.shutil.which", return_value="powershell"), patch(
-            "efcheck.notifications.subprocess.run",
+        with patch("skport_signin.notifications.shutil.which", return_value="powershell"), patch(
+            "skport_signin.notifications.subprocess.run",
             return_value=Completed(),
         ):
             message = notify_status("SESSION_EXPIRED", "title", "message")
@@ -43,3 +43,5 @@ class NotificationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

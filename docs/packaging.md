@@ -1,8 +1,8 @@
-# Packaging Guide
+﻿# Packaging Guide
 
 ## Overview
 
-EFCheck supports two Windows packaging targets:
+Skport_Signin supports two Windows packaging targets:
 
 - `onedir`: preferred for reliability
 - `onefile`: convenient distribution with slower startup
@@ -30,7 +30,7 @@ powershell -ExecutionPolicy Bypass -File .\packaging\build_onefile.ps1
 powershell -ExecutionPolicy Bypass -File .\packaging\package_release.ps1
 ```
 
-This script also writes `dist/releases/EFCheck-SHA256.txt` for the generated release assets.
+This script also writes `dist/releases/Skport_Signin-SHA256.txt` for the generated release assets.
 
 ## Output layout
 
@@ -40,7 +40,7 @@ Build output roots:
 - `dist/pyinstaller/onefile`
 - `dist/releases`
 
-Release archives flatten the executable output so the wrappers can find `efcheck.exe` in the release root.
+Release archives flatten the executable output so the wrappers can find `skport_signin.exe` in the release root.
 
 ## Browser runtime strategy
 
@@ -48,14 +48,14 @@ The packaged executable does not try to embed a full Chromium browser payload in
 
 Instead:
 
-- on first use, run `efcheck doctor --install-browser`
-- packaged mode writes browser runtime data under `%LOCALAPPDATA%\\EFCheck\\runtime\\playwright-browsers`
+- on first use, run `skport_signin doctor --install-browser`
+- packaged mode writes browser runtime data under `%LOCALAPPDATA%\\Skport_Signin\\runtime\\playwright-browsers`
 
 This keeps the packaging model deterministic and avoids shipping a fragile, oversized executable that still depends on runtime extraction.
 
 ## Data directories in packaged mode
 
-Packaged mode uses `%LOCALAPPDATA%\\EFCheck` by default:
+Packaged mode uses `%LOCALAPPDATA%\\Skport_Signin` by default:
 
 - `config/`
 - `state/`
@@ -76,8 +76,9 @@ GitHub Actions runs a Windows **onedir** packaging smoke build.
 
 It verifies:
 
-- `python -m efcheck package onedir` can start and complete
-- `dist/pyinstaller/onedir/efcheck/efcheck.exe` exists
+- `python -m skport_signin package onedir` can start and complete
+- `dist/pyinstaller/onedir/skport_signin/skport_signin.exe` exists
 - the packaged executable can run `--help`
 
 `onefile` is intentionally excluded from CI smoke to keep runtime and extraction overhead reasonable.
+

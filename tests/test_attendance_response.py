@@ -1,6 +1,6 @@
-import unittest
+﻿import unittest
 
-from efcheck.attendance_response import is_attendance_response
+from skport_signin.attendance_response import is_attendance_response
 
 
 class AttendanceResponseTests(unittest.TestCase):
@@ -40,3 +40,5 @@ class AttendanceResponseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

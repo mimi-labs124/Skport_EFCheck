@@ -1,6 +1,6 @@
-# Security Notes
+﻿# Security Notes
 
-EFCheck stores an authenticated browser session in a local Playwright persistent profile.
+Skport_Signin stores an authenticated browser session in a local Playwright persistent profile.
 
 Treat the following as sensitive data:
 
@@ -33,3 +33,4 @@ Check that you are **not** including:
 ## Reporting
 
 This is an unofficial personal-use automation helper. If you find a security issue in the repo itself, open a private report through the repository owner instead of posting secrets in a public issue.
+

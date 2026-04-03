@@ -1,10 +1,10 @@
-# GitHub Repository Metadata Suggestions
+﻿# GitHub Repository Metadata Suggestions
 
 This file tracks recommended GitHub "About" settings that cannot be fully managed by repository code.
 
 ## Suggested description
 
-Windows-first SKPORT sign-in helper with selectable Endfield and Arknights support, Playwright session capture, scheduled runs, and PyInstaller packaging.
+Windows-first Skport_Signin helper with selectable Endfield and Arknights support, Playwright session capture, scheduled runs, and PyInstaller packaging.
 
 ## Suggested topics
 
@@ -25,6 +25,7 @@ If there is no stable project site yet, leave Website empty for now rather than 
 
 ## Recommended release naming
 
-- `EFCheck-Windows-onedir.zip`
-- `EFCheck-Windows-onefile.zip`
-- `EFCheck-SHA256.txt`
+- `Skport_Signin-Windows-onedir.zip`
+- `Skport_Signin-Windows-onefile.zip`
+- `Skport_Signin-SHA256.txt`
+

@@ -1,15 +1,15 @@
-# EFCheck
+﻿# Skport_Signin
 
 [繁體中文版](./README.zh-TW.md)
 
-EFCheck is an unofficial Windows-first automation helper for the SKPORT daily sign-in pages used by Arknights: Endfield and Arknights.
+Skport_Signin is an unofficial Windows-first automation helper for the SKPORT daily sign-in pages used by Arknights: Endfield and Arknights.
 
 It supports two operating modes:
 
 - Source mode: clone the repository and run it with Python
 - Packaged mode: use the Windows `onedir` or `onefile` build outputs
 
-EFCheck stores browser session state locally and never expects those files to be published. Read [SECURITY.md](./SECURITY.md) before sharing anything built from your workspace.
+Skport_Signin stores browser session state locally and never expects those files to be published. Read [SECURITY.md](./SECURITY.md) before sharing anything built from your workspace.
 
 ## What it does
 
@@ -49,7 +49,7 @@ Those locations may contain cookies, local storage, access tokens, or other logi
 2. Run the guided installer:
 
 ```bat
-install_efcheck.bat
+install_skport_signin.bat
 ```
 
 The guided flow will:
@@ -66,38 +66,38 @@ The guided flow will:
 Use either the `onedir` or `onefile` release output and run:
 
 ```bat
-install_efcheck.bat
+install_skport_signin.bat
 ```
 
-In packaged mode the wrappers prefer `efcheck.exe` automatically.
+In packaged mode the wrappers prefer `skport_signin.exe` automatically.
 
 ## Unified CLI
 
 The package entry point is:
 
 ```powershell
-python -m efcheck --help
+python -m skport_signin --help
 ```
 
 or, after installation:
 
 ```powershell
-efcheck --help
+skport_signin --help
 ```
 
 Available commands:
 
-- `efcheck init`
-- `efcheck run`
-- `efcheck capture-session`
-- `efcheck configure-sites`
-- `efcheck register-task`
-- `efcheck doctor`
-- `efcheck paths`
-- `efcheck package onedir`
-- `efcheck package onefile`
+- `skport_signin init`
+- `skport_signin run`
+- `skport_signin capture-session`
+- `skport_signin configure-sites`
+- `skport_signin register-task`
+- `skport_signin doctor`
+- `skport_signin paths`
+- `skport_signin package onedir`
+- `skport_signin package onefile`
 
-`efcheck package ...` is source-mode only. A packaged `efcheck.exe` can run the operational commands, but it is not intended to rebuild PyInstaller artifacts.
+`skport_signin package ...` is source-mode only. A packaged `skport_signin.exe` can run the operational commands, but it is not intended to rebuild PyInstaller artifacts.
 
 ## Site configuration model
 
@@ -109,14 +109,14 @@ Available commands:
 Each site stays in config even when disabled. Toggle sites with:
 
 ```powershell
-python -m efcheck configure-sites --enable-site endfield --disable-site arknights
-python -m efcheck configure-sites --enable-site arknights --share-arknights-profile
+python -m skport_signin configure-sites --enable-site endfield --disable-site arknights
+python -m skport_signin configure-sites --enable-site arknights --share-arknights-profile
 ```
 
 The active gate is completion-only:
 
 - if a site already reached `SUCCESS` or `ALREADY_DONE` today, that site is skipped
-- if a site failed earlier today, EFCheck allows another run
+- if a site failed earlier today, Skport_Signin allows another run
 
 There is no active retry counter in the current config or newly written state files.
 
@@ -125,7 +125,7 @@ There is no active retry counter in the current config or newly written state fi
 ### 1. Initialize config
 
 ```powershell
-python -m efcheck init
+python -m skport_signin init
 ```
 
 This creates a default `settings.json` if one does not already exist. The default config enables Endfield and keeps Arknights present but disabled.
@@ -133,46 +133,46 @@ This creates a default `settings.json` if one does not already exist. The defaul
 ### 2. Inspect resolved paths
 
 ```powershell
-python -m efcheck paths --json
+python -m skport_signin paths --json
 ```
 
 Config resolution order:
 
 1. `--config`
-2. `EFCHECK_CONFIG`
-3. packaged-mode default: `%LOCALAPPDATA%\EFCheck\config\settings.json`
+2. `SKPORT_SIGNIN_CONFIG`
+3. packaged-mode default: `%LOCALAPPDATA%\Skport_Signin\config\settings.json`
 4. source-mode default: `<repo>\config\settings.json`
 
 Base directory resolution order:
 
 1. `--base-dir`
-2. `EFCHECK_BASE_DIR`
-3. packaged-mode default: `%LOCALAPPDATA%\EFCheck`
+2. `SKPORT_SIGNIN_BASE_DIR`
+3. packaged-mode default: `%LOCALAPPDATA%\Skport_Signin`
 4. source-mode default: repository root
 
 ### 3. Capture sessions
 
 ```powershell
-python -m efcheck capture-session --site endfield
+python -m skport_signin capture-session --site endfield
 ```
 
 If Arknights is enabled too:
 
 ```powershell
-python -m efcheck capture-session --site arknights
+python -m skport_signin capture-session --site arknights
 ```
 
 ### 4. Test a run
 
 ```powershell
-python -m efcheck run --dry-run --force
-python -m efcheck run --force
+python -m skport_signin run --dry-run --force
+python -m skport_signin run --force
 ```
 
 ### 5. Register the Windows logon task
 
 ```powershell
-python -m efcheck register-task
+python -m skport_signin register-task
 ```
 
 The compatibility wrapper is still available:
@@ -192,12 +192,12 @@ register_logon_task.bat
 
 ### Packaged mode defaults
 
-- Base dir: `%LOCALAPPDATA%\EFCheck`
-- Config: `%LOCALAPPDATA%\EFCheck\config\settings.json`
-- State: `%LOCALAPPDATA%\EFCheck\state\`
-- Logs: `%LOCALAPPDATA%\EFCheck\logs\`
-- Runtime: `%LOCALAPPDATA%\EFCheck\runtime\`
-- Browser profiles: `%LOCALAPPDATA%\EFCheck\browser-profile\`
+- Base dir: `%LOCALAPPDATA%\Skport_Signin`
+- Config: `%LOCALAPPDATA%\Skport_Signin\config\settings.json`
+- State: `%LOCALAPPDATA%\Skport_Signin\state\`
+- Logs: `%LOCALAPPDATA%\Skport_Signin\logs\`
+- Runtime: `%LOCALAPPDATA%\Skport_Signin\runtime\`
+- Browser profiles: `%LOCALAPPDATA%\Skport_Signin\browser-profile\`
 
 ## Browser runtime
 
@@ -212,7 +212,7 @@ playwright install chromium
 `setup_windows.bat` instead runs:
 
 ```powershell
-python -m efcheck doctor --install-browser
+python -m skport_signin doctor --install-browser
 ```
 
 That is the supported bootstrap path for this project.
@@ -224,10 +224,10 @@ The executable does not bundle a full Chromium browser runtime inside the execut
 Instead, run:
 
 ```powershell
-efcheck doctor --install-browser
+skport_signin doctor --install-browser
 ```
 
-This installs the browser runtime into the packaged EFCheck data directory under `runtime/playwright-browsers`.
+This installs the browser runtime into the packaged Skport_Signin data directory under `runtime/playwright-browsers`.
 
 ## one-folder vs one-file
 
@@ -249,13 +249,13 @@ This installs the browser runtime into the packaged EFCheck data directory under
 
 These are kept for compatibility and user convenience:
 
-- [`install_efcheck.bat`](./install_efcheck.bat)
+- [`install_skport_signin.bat`](./install_skport_signin.bat)
 - [`setup_windows.bat`](./setup_windows.bat)
 - [`capture_session.bat`](./capture_session.bat)
 - [`run_signin.bat`](./run_signin.bat)
 - [`register_logon_task.bat`](./register_logon_task.bat)
 
-They prefer `efcheck.exe` when present, otherwise they call `python -m efcheck ...`.
+They prefer `skport_signin.exe` when present, otherwise they call `python -m skport_signin ...`.
 
 ## Building packages
 
@@ -268,7 +268,7 @@ powershell -ExecutionPolicy Bypass -File .\packaging\build_onedir.ps1
 Or from a source checkout:
 
 ```powershell
-python -m efcheck package onedir
+python -m skport_signin package onedir
 ```
 
 ### Build onefile
@@ -280,7 +280,7 @@ powershell -ExecutionPolicy Bypass -File .\packaging\build_onefile.ps1
 Or from a source checkout:
 
 ```powershell
-python -m efcheck package onefile
+python -m skport_signin package onefile
 ```
 
 ### Build release zips
@@ -291,9 +291,9 @@ powershell -ExecutionPolicy Bypass -File .\packaging\package_release.ps1
 
 This writes:
 
-- `EFCheck-Windows-onedir.zip`
-- `EFCheck-Windows-onefile.zip`
-- `EFCheck-SHA256.txt`
+- `Skport_Signin-Windows-onedir.zip`
+- `Skport_Signin-Windows-onefile.zip`
+- `Skport_Signin-SHA256.txt`
 
 Legacy wrapper:
 
@@ -306,7 +306,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 - `Missing dependency: playwright ...`
   Install project dependencies and then bootstrap the browser runtime.
 - `Missing file: Playwright Chromium is not installed ...`
-  In source mode, run `playwright install chromium`. In packaged mode, run `efcheck doctor --install-browser`.
+  In source mode, run `playwright install chromium`. In packaged mode, run `skport_signin doctor --install-browser`.
 - `Browser profile not found ...`
   Run `capture-session` first.
 - `SESSION_EXPIRED`
@@ -325,11 +325,11 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 
 ## Support this project
 
-If EFCheck saves you time and you want to support ongoing maintenance, testing, and packaging work, you can support MimiLab on Ko-fi:
+If Skport_Signin saves you time and you want to support ongoing maintenance, testing, and packaging work, you can support MimiLab on Ko-fi:
 
-[Support EFCheck on Ko-fi](https://ko-fi.com/mimilab)
+[Support Skport_Signin on Ko-fi](https://ko-fi.com/mimilab)
 
-Support is completely optional. EFCheck remains an unofficial personal-use automation helper maintained in spare time.
+Support is completely optional. Skport_Signin remains an unofficial personal-use automation helper maintained in spare time.
 
 ## Development
 
@@ -340,3 +340,4 @@ See:
 - [docs/release.md](./docs/release.md)
 - [docs/repo-metadata.md](./docs/repo-metadata.md)
 - [CHANGELOG.md](./CHANGELOG.md)
+

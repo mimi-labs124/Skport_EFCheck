@@ -1,6 +1,6 @@
-import unittest
+﻿import unittest
 
-from efcheck.browser_helpers import day_card_selector_candidates, day_label_candidates
+from skport_signin.browser_helpers import day_card_selector_candidates, day_label_candidates
 
 
 class BrowserHelperTests(unittest.TestCase):
@@ -25,3 +25,5 @@ class BrowserHelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

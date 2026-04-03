@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal
 cd /d "%~dp0"
 
@@ -14,8 +14,8 @@ if errorlevel 1 (
   set "PYTHON_CMD=py -3"
 )
 
-if exist ".\efcheck.exe" (
-  set "EFCHECK_CMD=.\efcheck.exe"
+if exist ".\skport_signin.exe" (
+  set "SKPORT_SIGNIN_CMD=.\skport_signin.exe"
 ) else (
   if not exist ".venv\Scripts\python.exe" (
     %PYTHON_CMD% -m venv .venv
@@ -29,12 +29,12 @@ if exist ".\efcheck.exe" (
   python -m pip install -e .
   if errorlevel 1 exit /b 1
 
-  set "EFCHECK_CMD=.venv\Scripts\python.exe -m efcheck"
+  set "SKPORT_SIGNIN_CMD=.venv\Scripts\python.exe -m skport_signin"
 )
 
-%EFCHECK_CMD% init
+%SKPORT_SIGNIN_CMD% init
 if errorlevel 1 exit /b 1
-%EFCHECK_CMD% doctor --install-browser
+%SKPORT_SIGNIN_CMD% doctor --install-browser
 if errorlevel 1 exit /b 1
 
 echo Setup complete.
@@ -43,3 +43,4 @@ if not defined NO_PAUSE (
   pause
 )
 endlocal
+

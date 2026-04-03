@@ -1,8 +1,8 @@
-import unittest
+﻿import unittest
 from unittest.mock import patch
 from zoneinfo import ZoneInfoNotFoundError
 
-from efcheck.time_helpers import load_timezone
+from skport_signin.time_helpers import load_timezone
 
 
 class TimeHelperTests(unittest.TestCase):
@@ -13,7 +13,7 @@ class TimeHelperTests(unittest.TestCase):
 
     def test_load_timezone_raises_helpful_error_when_tzdata_is_missing(self) -> None:
         with patch(
-            "efcheck.time_helpers.ZoneInfo",
+            "skport_signin.time_helpers.ZoneInfo",
             side_effect=ZoneInfoNotFoundError("Asia/Taipei"),
         ):
             with self.assertRaisesRegex(
@@ -25,3 +25,5 @@ class TimeHelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

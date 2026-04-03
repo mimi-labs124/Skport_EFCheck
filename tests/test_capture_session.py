@@ -1,4 +1,4 @@
-import io
+﻿import io
 import json
 import tempfile
 import unittest
@@ -7,7 +7,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from efcheck.commands import capture_session
+from skport_signin.commands import capture_session
 
 
 class CaptureSessionTests(unittest.TestCase):
@@ -122,3 +122,5 @@ class CaptureSessionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

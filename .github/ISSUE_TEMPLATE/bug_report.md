@@ -1,6 +1,6 @@
----
+﻿---
 name: Bug report
-description: Report a reproducible EFCheck issue
+description: Report a reproducible Skport_Signin issue
 labels: [bug]
 ---
 
@@ -16,7 +16,7 @@ Describe the problem in one short paragraph.
 - Python version (if source mode): <!-- e.g., 3.12.3 / N/A -->
 - Playwright browser installed: <!-- yes / no / unsure -->
 
-## `efcheck doctor` output
+## `skport_signin doctor` output
 
 > Remove sensitive details before posting.
 
@@ -41,3 +41,5 @@ What happened instead?
 ## Logs / screenshots (optional)
 
 Paste relevant logs or screenshots with sensitive values removed.
+
+

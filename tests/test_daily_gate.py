@@ -1,9 +1,9 @@
-import tempfile
+﻿import tempfile
 import unittest
 from pathlib import Path
 
-from efcheck.daily_gate import RunGateState, mark_attempt, should_run_today
-from efcheck.errors import StateFileError
+from skport_signin.daily_gate import RunGateState, mark_attempt, should_run_today
+from skport_signin.errors import StateFileError
 
 
 class DailyGateTests(unittest.TestCase):
@@ -115,3 +115,5 @@ class DailyGateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

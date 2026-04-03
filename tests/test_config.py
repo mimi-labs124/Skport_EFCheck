@@ -1,10 +1,10 @@
-import json
+﻿import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from efcheck.config import find_site, load_runtime_settings
-from efcheck.errors import ConfigError
+from skport_signin.config import find_site, load_runtime_settings
+from skport_signin.errors import ConfigError
 
 
 class ConfigTests(unittest.TestCase):
@@ -210,3 +210,5 @@ class ConfigTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
