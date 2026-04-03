@@ -3,9 +3,17 @@
 import argparse
 import sys
 
-from skport_signin.config import DEFAULT_ENDFIELD_KEY, find_site, load_runtime_settings, resolve_path
+from skport_signin.config import (
+    DEFAULT_ENDFIELD_KEY,
+    find_site,
+    load_runtime_settings,
+    resolve_path,
+)
 from skport_signin.errors import ConfigError
-from skport_signin.playwright_runtime import ensure_browser_runtime_available, playwright_browser_env
+from skport_signin.playwright_runtime import (
+    ensure_browser_runtime_available,
+    playwright_browser_env,
+)
 from skport_signin.runtime import RuntimeContext, build_runtime_context
 
 DEFAULT_URL = "https://game.skport.com/endfield/sign-in?header=0&hg_media=skport&hg_link_campaign=tools"
@@ -97,5 +105,4 @@ def legacy_main(argv: list[str] | None = None) -> int:
 
 
 main = legacy_main
-
 

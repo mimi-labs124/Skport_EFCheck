@@ -15,10 +15,18 @@ from skport_signin.browser_helpers import (
     day_label_candidates,
 )
 from skport_signin.config import SiteSettings, load_runtime_settings, resolve_path
-from skport_signin.daily_gate import RunGateState, load_state, mark_attempt, should_run_today
+from skport_signin.daily_gate import (
+    RunGateState,
+    load_state,
+    mark_attempt,
+    should_run_today,
+)
 from skport_signin.errors import ConfigError, InteractionError, StateFileError
 from skport_signin.notifications import notify_status
-from skport_signin.playwright_runtime import ensure_browser_runtime_available, playwright_browser_env
+from skport_signin.playwright_runtime import (
+    ensure_browser_runtime_available,
+    playwright_browser_env,
+)
 from skport_signin.result_helpers import final_signin_status
 from skport_signin.runtime import RuntimeContext, build_runtime_context
 from skport_signin.statuses import ALREADY_DONE, ERROR, SESSION_EXPIRED, SUCCESS
@@ -400,5 +408,4 @@ def legacy_main(argv: list[str] | None = None) -> int:
 
 
 main = legacy_main
-
 

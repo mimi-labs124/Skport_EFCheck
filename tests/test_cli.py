@@ -1,5 +1,5 @@
-﻿import io
 import importlib
+import io
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -52,7 +52,10 @@ class CliTests(unittest.TestCase):
     def test_cli_reports_configuration_errors_cleanly(self) -> None:
         stderr = io.StringIO()
 
-        with patch("skport_signin.commands.run.handle_command", side_effect=ConfigError("bad config")):
+        with patch(
+            "skport_signin.commands.run.handle_command",
+            side_effect=ConfigError("bad config"),
+        ):
             exit_code = cli.main(["run"], stderr=stderr)
 
         self.assertEqual(exit_code, 30)
@@ -69,5 +72,3 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 10)
         self.assertIn("Runtime error: click failed", stderr.getvalue())
-
-
