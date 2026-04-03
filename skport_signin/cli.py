@@ -11,6 +11,7 @@ from skport_signin.commands import package as package_command
 from skport_signin.commands import paths as paths_command
 from skport_signin.commands import register_task as register_task_command
 from skport_signin.commands import run as run_command
+from skport_signin.commands import setup as setup_command
 from skport_signin.errors import ConfigError, InteractionError, StateFileError
 from skport_signin.runtime import build_runtime_context
 
@@ -18,6 +19,7 @@ COMMAND_HELP = {
     "run": "Run sign-in for all enabled sites.",
     "capture-session": "Open a browser and save a login session profile.",
     "configure-sites": "Configure the enabled SKPORT sites in settings.json.",
+    "setup": "Run the guided interactive setup flow.",
     "register-task": "Register the Windows logon scheduled task.",
     "doctor": "Check config, browser runtime, and environment health.",
     "init": "Create or refresh a default local config file.",
@@ -45,6 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_command.register_parser(subparsers)
     capture_session_command.register_parser(subparsers)
     configure_sites_command.register_parser(subparsers)
+    setup_command.register_parser(subparsers)
     register_task_command.register_parser(subparsers)
 
     doctor_command.register_parser(subparsers)
@@ -95,5 +98,4 @@ def _not_implemented(name: str):
         return 2
 
     return handler
-
 

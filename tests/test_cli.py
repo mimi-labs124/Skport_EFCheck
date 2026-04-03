@@ -27,6 +27,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("capture-session", output)
         self.assertIn("configure-sites", output)
         self.assertIn("register-task", output)
+        self.assertIn("setup", output)
         self.assertIn("doctor", output)
         self.assertIn("paths", output)
         self.assertIn("package", output)

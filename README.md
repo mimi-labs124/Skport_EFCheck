@@ -55,11 +55,8 @@ install_skport_signin.bat
 The guided flow will:
 
 - install the Python package into `.venv`
-- initialize local config
-- ask which known sites to enable
-- optionally let Arknights share the Endfield browser profile when both are enabled
-- optionally capture sessions for the enabled sites
-- optionally register the Windows logon task
+- bootstrap the Playwright browser runtime
+- hand off to `skport_signin setup --interactive`
 
 ### Packaged mode
 
@@ -88,6 +85,7 @@ skport_signin --help
 Available commands:
 
 - `skport_signin init`
+- `skport_signin setup --interactive`
 - `skport_signin run`
 - `skport_signin capture-session`
 - `skport_signin configure-sites`
@@ -122,7 +120,15 @@ There is no active retry counter in the current config or newly written state fi
 
 ## Typical workflow
 
-### 1. Initialize config
+### 1. Run guided setup
+
+```powershell
+python -m skport_signin setup --interactive
+```
+
+This guided flow initializes config if needed, asks which sites to enable, optionally shares the Endfield profile with Arknights, and can immediately chain into session capture and task registration.
+
+### 2. Initialize config manually
 
 ```powershell
 python -m skport_signin init
@@ -130,7 +136,7 @@ python -m skport_signin init
 
 This creates a default `settings.json` if one does not already exist. The default config enables Endfield and keeps Arknights present but disabled.
 
-### 2. Inspect resolved paths
+### 3. Inspect resolved paths
 
 ```powershell
 python -m skport_signin paths --json
@@ -150,7 +156,7 @@ Base directory resolution order:
 3. packaged-mode default: `%LOCALAPPDATA%\Skport_Signin`
 4. source-mode default: repository root
 
-### 3. Capture sessions
+### 4. Capture sessions
 
 ```powershell
 python -m skport_signin capture-session --site endfield
@@ -162,14 +168,14 @@ If Arknights is enabled too:
 python -m skport_signin capture-session --site arknights
 ```
 
-### 4. Test a run
+### 5. Test a run
 
 ```powershell
 python -m skport_signin run --dry-run --force
 python -m skport_signin run --force
 ```
 
-### 5. Register the Windows logon task
+### 6. Register the Windows logon task
 
 ```powershell
 python -m skport_signin register-task
@@ -303,6 +309,8 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 
 ## Troubleshooting
 
+- `setup --interactive` fails after config changes
+  Run `skport_signin doctor --json` to inspect config validity, enabled sites, and writable path health.
 - `Missing dependency: playwright ...`
   Install project dependencies and then bootstrap the browser runtime.
 - `Missing file: Playwright Chromium is not installed ...`
@@ -340,4 +348,3 @@ See:
 - [docs/release.md](./docs/release.md)
 - [docs/repo-metadata.md](./docs/repo-metadata.md)
 - [CHANGELOG.md](./CHANGELOG.md)
-

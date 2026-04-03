@@ -42,25 +42,16 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn("skport_signin.exe", script)
         self.assertIn("-m skport_signin run", script)
 
-    def test_install_flow_prompts_for_site_selection(self) -> None:
+    def test_install_flow_delegates_to_setup_command(self) -> None:
         script = Path("install_skport_signin.bat").read_text(encoding="utf-8")
 
-        self.assertIn("Enable Endfield sign-in?", script)
-        self.assertIn("Enable Arknights sign-in?", script)
-        self.assertIn("Share Endfield browser profile with Arknights?", script)
-        self.assertIn("--enable-site endfield", script)
-        self.assertIn("--enable-site arknights", script)
-        self.assertIn("--disable-site endfield", script)
-        self.assertIn("--disable-site arknights", script)
-        self.assertIn(" configure-sites ", script)
-        self.assertNotIn(
-            'set "CONFIGURE_ARGS=--disable-site endfield --disable-site arknights"',
-            script,
-        )
+        self.assertIn(" setup --interactive", script)
+        self.assertNotIn("Enable Endfield sign-in?", script)
+        self.assertNotIn("Enable Arknights sign-in?", script)
+        self.assertNotIn("Share Endfield browser profile with Arknights?", script)
+        self.assertNotIn(" configure-sites ", script)
         self.assertIn("call :has_working_venv", script)
-        self.assertIn("Failed while updating site configuration.", script)
-        self.assertIn(" capture-session --site endfield", script)
-        self.assertIn(" capture-session --site arknights", script)
+        self.assertIn("Failed while running the guided setup flow.", script)
 
     def test_manual_wrappers_delegate_to_unified_cli(self) -> None:
         run_script = Path("run_signin.bat").read_text(encoding="utf-8")

@@ -32,8 +32,8 @@ Use consistent asset names so users can choose quickly:
 
 ## Suggested tag and release title
 
-- Tag: `v0.3.1`
-- Title: `v0.3.1 - Installer and packaging hotfixes`
+- Tag: `v0.4.0`
+- Title: `v0.4.0 - Guided setup and doctor health checks`
 
 ## Versioning strategy
 

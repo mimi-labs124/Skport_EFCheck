@@ -58,11 +58,8 @@ install_skport_signin.bat
 引導式流程會：
 
 - 在 `.venv` 安裝 Python 套件
-- 初始化本機設定檔
-- 詢問要啟用哪些已知站點
-- 若 Endfield 與 Arknights 都啟用，再詢問是否共用瀏覽器 profile
-- 視需要擷取已啟用站點的 session
-- 視需要註冊 Windows 登入排程
+- bootstrap Playwright browser runtime
+- 接著轉交給 `skport_signin setup --interactive`
 
 ### 打包模式
 
@@ -91,6 +88,7 @@ skport_signin --help
 可用命令：
 
 - `skport_signin init`
+- `skport_signin setup --interactive`
 - `skport_signin run`
 - `skport_signin capture-session`
 - `skport_signin configure-sites`
@@ -125,7 +123,15 @@ python -m skport_signin configure-sites --enable-site arknights --share-arknight
 
 ## 典型流程
 
-### 1. 初始化設定檔
+### 1. 執行引導式 setup
+
+```powershell
+python -m skport_signin setup --interactive
+```
+
+這個流程會在需要時初始化設定檔、詢問要啟用哪些站點、視需要設定 Arknights 共用 Endfield profile，並可直接接續 session capture 與排程註冊。
+
+### 2. 手動初始化設定檔
 
 ```powershell
 python -m skport_signin init
@@ -133,7 +139,7 @@ python -m skport_signin init
 
 這會在設定檔不存在時建立預設 `settings.json`。預設只啟用 Endfield，Arknights 會保留但設為停用。
 
-### 2. 檢查實際路徑
+### 3. 檢查實際路徑
 
 ```powershell
 python -m skport_signin paths --json
@@ -153,7 +159,7 @@ Base directory 解析順序：
 3. 打包模式預設：`%LOCALAPPDATA%\Skport_Signin`
 4. 原始碼模式預設：repo 根目錄
 
-### 3. 擷取 session
+### 4. 擷取 session
 
 ```powershell
 python -m skport_signin capture-session --site endfield
@@ -165,14 +171,14 @@ python -m skport_signin capture-session --site endfield
 python -m skport_signin capture-session --site arknights
 ```
 
-### 4. 測試簽到
+### 5. 測試簽到
 
 ```powershell
 python -m skport_signin run --dry-run --force
 python -m skport_signin run --force
 ```
 
-### 5. 註冊 Windows 登入排程
+### 6. 註冊 Windows 登入排程
 
 ```powershell
 python -m skport_signin register-task
@@ -306,6 +312,8 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 
 ## 疑難排解
 
+- `setup --interactive` 在修改設定後失敗
+  先跑 `skport_signin doctor --json`，檢查 config 是否有效、哪些站點已啟用，以及各路徑是否可寫。
 - `Missing dependency: playwright ...`
   先安裝專案依賴，再執行 browser bootstrap。
 - `Missing file: Playwright Chromium is not installed ...`
@@ -343,4 +351,3 @@ powershell -ExecutionPolicy Bypass -File .\tools\package_windows_release.ps1
 - [docs/release.md](./docs/release.md)
 - [docs/repo-metadata.md](./docs/repo-metadata.md)
 - [CHANGELOG.md](./CHANGELOG.md)
-

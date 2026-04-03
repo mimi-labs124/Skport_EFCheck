@@ -7,6 +7,19 @@ The format is based on Keep a Changelog and uses a simple `major.minor.patch` ve
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-03
+
+### Added
+
+- Added `skport_signin setup --interactive` as the official guided setup flow inside the unified CLI
+- Expanded `doctor` into a real health check that reports config validity, enabled sites, per-site resolved paths, and writable runtime directories
+
+### Changed
+
+- Simplified `install_skport_signin.bat` so it now acts as a Windows launcher that bootstraps Python and hands off to `skport_signin setup --interactive`
+- Moved config and daily state persistence to atomic file replacement to reduce the chance of half-written JSON files
+- Tightened logged-out detection so generic page copy is less likely to be misclassified as `SESSION_EXPIRED`
+
 ## [0.3.1] - 2026-04-03
 
 ### Fixed
