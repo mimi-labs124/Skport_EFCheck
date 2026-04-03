@@ -1,10 +1,10 @@
-import os
+﻿import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from efcheck import app_paths
+from skport_signin import app_paths
 
 
 class AppPathsTests(unittest.TestCase):
@@ -26,16 +26,30 @@ class AppPathsTests(unittest.TestCase):
         ), patch.object(app_paths, "is_packaged_mode", return_value=True), patch.object(
             app_paths.sys,
             "executable",
-            str(Path(temp_dir) / "EFCheck" / "efcheck.exe"),
+            str(Path(temp_dir) / "Skport_Signin" / "skport_signin.exe"),
         ):
             paths = app_paths.build_app_paths()
 
-        expected_base = (Path(temp_dir) / "EFCheck").resolve()
+        expected_base = (Path(temp_dir) / "Skport_Signin").resolve()
         self.assertEqual(paths.mode, "packaged")
         self.assertEqual(paths.base_dir, expected_base)
         self.assertEqual(paths.config_file, expected_base / "config" / "settings.json")
         self.assertEqual(paths.browser_profiles_dir, expected_base / "browser-profile")
         self.assertEqual(paths.runtime_dir, expected_base / "runtime")
+
+    def test_new_environment_variable_names_are_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, patch.dict(
+            os.environ,
+            {
+                "SKPORT_SIGNIN_BASE_DIR": str(Path(temp_dir) / "portable"),
+                "SKPORT_SIGNIN_CONFIG": str(Path(temp_dir) / "portable-config.json"),
+            },
+            clear=False,
+        ), patch.object(app_paths, "is_packaged_mode", return_value=True):
+            paths = app_paths.build_app_paths()
+
+        self.assertEqual(paths.base_dir, (Path(temp_dir) / "portable").resolve())
+        self.assertEqual(paths.config_file, (Path(temp_dir) / "portable-config.json").resolve())
 
     def test_cli_override_wins_for_base_dir_and_config(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir, patch.object(
@@ -50,3 +64,5 @@ class AppPathsTests(unittest.TestCase):
 
         self.assertEqual(paths.base_dir, base_dir.resolve())
         self.assertEqual(paths.config_file, config_path.resolve())
+
+

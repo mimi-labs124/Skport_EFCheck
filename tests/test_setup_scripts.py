@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 from pathlib import Path
 
 
@@ -9,7 +9,7 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn("python -m pip install -e .", script)
         self.assertIn("doctor --install-browser", script)
         self.assertGreaterEqual(script.count("if errorlevel 1 exit /b 1"), 3)
-        self.assertIn("%EFCHECK_CMD% init", script)
+        self.assertIn("%SKPORT_SIGNIN_CMD% init", script)
 
     def test_register_task_uses_hidden_powershell_runner(self) -> None:
         script = Path("register_logon_task.ps1").read_text(encoding="utf-8")
@@ -18,11 +18,11 @@ class SetupScriptTests(unittest.TestCase):
         self.assertNotIn('New-ScheduledTaskAction -Execute "cmd.exe"', script)
         self.assertIn("-RandomDelay", script)
         self.assertNotIn("Start-Sleep -Seconds", script)
-        self.assertIn("efcheck.exe", script)
-        self.assertIn("-m efcheck run", script)
+        self.assertIn("skport_signin.exe", script)
+        self.assertIn("-m skport_signin run", script)
 
     def test_install_flow_prompts_for_site_selection(self) -> None:
-        script = Path("install_efcheck.bat").read_text(encoding="utf-8")
+        script = Path("install_skport_signin.bat").read_text(encoding="utf-8")
 
         self.assertIn("Enable Endfield sign-in?", script)
         self.assertIn("Enable Arknights sign-in?", script)
@@ -38,13 +38,15 @@ class SetupScriptTests(unittest.TestCase):
         capture_script = Path("capture_session.bat").read_text(encoding="utf-8")
         register_script = Path("register_logon_task.bat").read_text(encoding="utf-8")
 
-        self.assertIn("efcheck.exe", run_script)
-        self.assertIn("-m efcheck run", run_script)
-        self.assertIn("efcheck.exe", capture_script)
-        self.assertIn("-m efcheck capture-session", capture_script)
-        self.assertIn("efcheck.exe", register_script)
+        self.assertIn("skport_signin.exe", run_script)
+        self.assertIn("-m skport_signin run", run_script)
+        self.assertIn("skport_signin.exe", capture_script)
+        self.assertIn("-m skport_signin capture-session", capture_script)
+        self.assertIn("skport_signin.exe", register_script)
         self.assertIn("register-task", register_script)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+

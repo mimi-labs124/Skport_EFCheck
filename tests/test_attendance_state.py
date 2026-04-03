@@ -1,6 +1,6 @@
-import unittest
+﻿import unittest
 
-from efcheck.attendance_state import derive_attendance_state
+from skport_signin.attendance_state import derive_attendance_state
 
 
 class AttendanceStateTests(unittest.TestCase):
@@ -58,3 +58,5 @@ class AttendanceStateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

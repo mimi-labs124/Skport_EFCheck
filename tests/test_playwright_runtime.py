@@ -1,8 +1,8 @@
-import tempfile
+﻿import tempfile
 import unittest
 from pathlib import Path
 
-from efcheck.playwright_runtime import ensure_browser_runtime_available
+from skport_signin.playwright_runtime import ensure_browser_runtime_available
 
 
 class _FakeChromium:
@@ -37,3 +37,5 @@ class PlaywrightRuntimeTests(unittest.TestCase):
                 ensure_browser_runtime_available(playwright, paths)
 
         self.assertIn("playwright install chromium", str(cm.exception))
+
+

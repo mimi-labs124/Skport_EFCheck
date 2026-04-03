@@ -1,10 +1,10 @@
-import io
+﻿import io
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from efcheck import cli
+from skport_signin import cli
 
 
 class DoctorTests(unittest.TestCase):
@@ -48,3 +48,5 @@ class DoctorTests(unittest.TestCase):
         payload = json.loads(stdout.getvalue())
         self.assertFalse(payload["config_exists"])
         self.assertIn("playwright_browsers_dir", payload["paths"])
+
+

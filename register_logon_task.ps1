@@ -1,5 +1,5 @@
-param(
-    [string]$TaskName = "EFCheck Sign-In",
+﻿param(
+    [string]$TaskName = "Skport_Signin Sign-In",
     [int]$DelaySeconds = 90,
     [switch]$NoPause
 )
@@ -19,23 +19,23 @@ function Get-ScheduledLaunchArguments {
     $escapedScriptRoot = $ScriptRoot.Replace("'", "''")
     $command = @"
 Set-Location -LiteralPath '$escapedScriptRoot'
-if (Test-Path '.\efcheck.exe') {
-    & '.\efcheck.exe' run
+if (Test-Path '.\skport_signin.exe') {
+    & '.\skport_signin.exe' run
     exit `$LASTEXITCODE
 }
 if (Test-Path '.\.venv\Scripts\pythonw.exe') {
-    & '.\.venv\Scripts\pythonw.exe' -m efcheck run
+    & '.\.venv\Scripts\pythonw.exe' -m skport_signin run
     exit `$LASTEXITCODE
 }
 if (Test-Path '.\.venv\Scripts\python.exe') {
-    & '.\.venv\Scripts\python.exe' -m efcheck run
+    & '.\.venv\Scripts\python.exe' -m skport_signin run
     exit `$LASTEXITCODE
 }
 if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 -m efcheck run
+    & py -3 -m skport_signin run
     exit `$LASTEXITCODE
 }
-& python -m efcheck run
+& python -m skport_signin run
 exit `$LASTEXITCODE
 "@
 
@@ -89,10 +89,11 @@ Register-ScheduledTask `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
-    -Description "Run EFCheck at logon with a Task Scheduler delay and let the Python gate limit retries per day." `
+    -Description "Run Skport_Signin at logon with a Task Scheduler delay and let the Python gate limit retries per day." `
     -Force
 
 Write-Host "Registered task: $TaskName"
 if (-not $NoPause) {
     PAUSE
 }
+

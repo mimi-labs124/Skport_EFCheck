@@ -1,5 +1,5 @@
-name: Bug report
-description: Report a reproducible EFCheck problem
+﻿name: Bug report
+description: Report a reproducible Skport_Signin problem
 title: "[Bug] "
 labels:
   - bug
@@ -30,3 +30,5 @@ body:
     attributes:
       label: Relevant output
       description: Remove sensitive data before pasting.
+
+

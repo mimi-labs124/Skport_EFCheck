@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateSet("all", "onedir", "onefile")]
     [string]$Mode = "all",
     [string]$Python = "python",
@@ -13,13 +13,13 @@ function Invoke-ReleaseZip {
         [string]$SelectedMode
     )
 
-    $env:EFCHECK_PROJECT_ROOT = $projectRoot
+    $env:SKPORT_SIGNIN_PROJECT_ROOT = $projectRoot
     @"
 import os
 from pathlib import Path
-from efcheck.packaging.pyinstaller_helpers import create_release_zip
+from skport_signin.packaging.pyinstaller_helpers import create_release_zip
 
-project_root = Path(os.environ["EFCHECK_PROJECT_ROOT"])
+project_root = Path(os.environ["SKPORT_SIGNIN_PROJECT_ROOT"])
 zip_path = create_release_zip("$SelectedMode", project_root)
 print(zip_path)
 "@ | & $Python -
@@ -47,11 +47,11 @@ try {
 
     foreach ($selectedMode in $selectedModes) {
         Invoke-ReleaseZip -SelectedMode $selectedMode | Out-Null
-        $releaseZip = Join-Path $projectRoot ("dist\\releases\\EFCheck-Windows-{0}.zip" -f $selectedMode)
+        $releaseZip = Join-Path $projectRoot ("dist\\releases\\Skport_Signin-Windows-{0}.zip" -f $selectedMode)
         $releaseZips += $releaseZip
     }
 
-    $checksumPath = Join-Path $projectRoot "dist\releases\EFCheck-SHA256.txt"
+    $checksumPath = Join-Path $projectRoot "dist\releases\Skport_Signin-SHA256.txt"
     $checksumLines = @()
     foreach ($releaseZip in $releaseZips) {
         $hash = (Get-FileHash -Path $releaseZip -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -63,3 +63,4 @@ try {
 finally {
     Pop-Location
 }
+

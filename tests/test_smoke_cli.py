@@ -1,12 +1,12 @@
-import io
+﻿import io
 import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from efcheck import cli
-from efcheck.runtime import RuntimeContext
+from skport_signin import cli
+from skport_signin.runtime import RuntimeContext
 
 
 class SmokeCliTests(unittest.TestCase):
@@ -40,7 +40,7 @@ class SmokeCliTests(unittest.TestCase):
 
     def test_package_subcommands_dispatch_to_builder(self) -> None:
         with patch(
-            "efcheck.commands.package.build_pyinstaller",
+            "skport_signin.commands.package.build_pyinstaller",
             return_value=Path("dist"),
         ) as build_mock:
             stdout = io.StringIO()
@@ -64,8 +64,10 @@ class SmokeCliTests(unittest.TestCase):
             stderr=io.StringIO(),
         )
 
-        with patch("efcheck.cli.build_runtime_context", return_value=runtime):
+        with patch("skport_signin.cli.build_runtime_context", return_value=runtime):
             exit_code = cli.main(["package", "onedir"])
 
         self.assertEqual(exit_code, 20)
         self.assertIn("Packaging is only supported", runtime.stderr.getvalue())
+
+

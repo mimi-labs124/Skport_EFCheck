@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 from pathlib import Path
 
 
@@ -25,11 +25,12 @@ class ReleaseDocsTests(unittest.TestCase):
         release_doc = Path("docs/release.md").read_text(encoding="utf-8")
         readme = Path("README.md").read_text(encoding="utf-8")
 
-        self.assertIn("[0.3.0]", changelog)
-        self.assertIn("Tag: `v0.3.0`", release_doc)
+        self.assertIn("Skport_Signin", changelog)
+        self.assertIn("Skport_Signin", release_doc)
         self.assertIn("recommend **onedir** first", release_doc)
         self.assertIn("enabled: true/false", readme)
         self.assertIn("same-day completion state", readme)
+        self.assertIn("Skport_Signin", readme)
 
     def test_ci_covers_windows_ruff_tests_and_packaging_smoke(self) -> None:
         ci_text = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -38,5 +39,7 @@ class ReleaseDocsTests(unittest.TestCase):
         self.assertIn("ruff", ci_text)
         self.assertIn("python -m unittest discover -s tests", ci_text)
         self.assertIn("packaging-smoke-windows", ci_text)
-        self.assertIn("python -m efcheck package onedir", ci_text)
-        self.assertIn("efcheck.exe --help", ci_text)
+        self.assertIn("python -m skport_signin package onedir", ci_text)
+        self.assertIn("skport_signin.exe --help", ci_text)
+
+

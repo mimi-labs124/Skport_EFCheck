@@ -1,15 +1,21 @@
-import io
+﻿import io
+import importlib
 import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from efcheck import cli
-from efcheck.errors import ConfigError, InteractionError
+from skport_signin import cli
+from skport_signin.errors import ConfigError, InteractionError
 
 
 class CliTests(unittest.TestCase):
+    def test_python_module_entrypoint_is_available(self) -> None:
+        module = importlib.import_module("skport_signin.cli")
+
+        self.assertIs(module.main, cli.main)
+
     def test_top_level_help_lists_expected_commands(self) -> None:
         stdout = io.StringIO()
         with self.assertRaises(SystemExit) as cm, redirect_stdout(stdout):
@@ -24,6 +30,8 @@ class CliTests(unittest.TestCase):
         self.assertIn("doctor", output)
         self.assertIn("paths", output)
         self.assertIn("package", output)
+        self.assertIn("skport_signin", output)
+        self.assertIn("Skport_Signin", output)
 
     def test_paths_json_command_runs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -44,7 +52,7 @@ class CliTests(unittest.TestCase):
     def test_cli_reports_configuration_errors_cleanly(self) -> None:
         stderr = io.StringIO()
 
-        with patch("efcheck.commands.run.handle_command", side_effect=ConfigError("bad config")):
+        with patch("skport_signin.commands.run.handle_command", side_effect=ConfigError("bad config")):
             exit_code = cli.main(["run"], stderr=stderr)
 
         self.assertEqual(exit_code, 30)
@@ -54,10 +62,12 @@ class CliTests(unittest.TestCase):
         stderr = io.StringIO()
 
         with patch(
-            "efcheck.commands.run.handle_command",
+            "skport_signin.commands.run.handle_command",
             side_effect=InteractionError("click failed"),
         ):
             exit_code = cli.main(["run"], stderr=stderr)
 
         self.assertEqual(exit_code, 10)
         self.assertIn("Runtime error: click failed", stderr.getvalue())
+
+

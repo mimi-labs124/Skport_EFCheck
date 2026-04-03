@@ -1,4 +1,4 @@
-# Multi-Site Sign-In Implementation Plan
+﻿# Multi-Site Sign-In Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -72,3 +72,4 @@
 - [ ] **Step 2: Run `C:\Users\jerry\OneDrive\桌面\AGs\EFCheck\.venv\Scripts\python.exe .\sign_in.py --dry-run --force` against legacy config**
 - [ ] **Step 3: Run `C:\Users\jerry\OneDrive\桌面\AGs\EFCheck\.venv\Scripts\python.exe .\capture_session.py --help`**
 - [ ] **Step 4: Report any remaining Arknights-specific runtime risk that still requires live page verification**
+

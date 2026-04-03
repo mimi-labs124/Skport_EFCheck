@@ -1,11 +1,11 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "efcheck"
-version = "0.3.0"
-description = "Windows-first SKPORT sign-in helper for Endfield and Arknights."
+name = "skport-signin"
+version = "0.3.1"
+description = "Windows-first Skport_Signin helper for Endfield and Arknights."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -24,13 +24,13 @@ dev = [
 ]
 
 [project.scripts]
-efcheck = "efcheck.cli:main"
+skport_signin = "skport_signin.cli:main"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["efcheck", "efcheck.*"]
+include = ["skport_signin", "skport_signin.*"]
 
 [tool.ruff]
 line-length = 100
@@ -38,3 +38,4 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+

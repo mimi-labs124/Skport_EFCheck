@@ -1,4 +1,4 @@
-import io
+﻿import io
 import json
 import tempfile
 import unittest
@@ -8,9 +8,9 @@ from datetime import timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from efcheck.commands import run as sign_in
-from efcheck.errors import InteractionError, StateFileError
-from efcheck.statuses import SUCCESS
+from skport_signin.commands import run as sign_in
+from skport_signin.errors import InteractionError, StateFileError
+from skport_signin.statuses import SUCCESS
 
 
 class _FakeResponse:
@@ -489,3 +489,5 @@ class SignInTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

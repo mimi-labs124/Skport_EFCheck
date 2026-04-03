@@ -1,7 +1,7 @@
-import unittest
+﻿import unittest
 from pathlib import Path
 
-from efcheck.packaging import pyinstaller_helpers
+from skport_signin.packaging import pyinstaller_helpers
 
 
 class PackagingTests(unittest.TestCase):
@@ -12,7 +12,7 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("README.zh-TW.md", manifest)
         self.assertIn("LICENSE", manifest)
         self.assertIn("SECURITY.md", manifest)
-        self.assertIn("install_efcheck.bat", manifest)
+        self.assertIn("install_skport_signin.bat", manifest)
         self.assertIn("setup_windows.bat", manifest)
         self.assertIn("capture_session.bat", manifest)
         self.assertIn("run_signin.bat", manifest)
@@ -30,10 +30,12 @@ class PackagingTests(unittest.TestCase):
     def test_package_release_script_uses_env_for_project_root(self) -> None:
         script = Path("packaging/package_release.ps1").read_text(encoding="utf-8")
 
-        self.assertIn('$env:EFCHECK_PROJECT_ROOT = $projectRoot', script)
-        self.assertIn('os.environ["EFCHECK_PROJECT_ROOT"]', script)
+        self.assertIn('$env:SKPORT_SIGNIN_PROJECT_ROOT = $projectRoot', script)
+        self.assertIn('os.environ["SKPORT_SIGNIN_PROJECT_ROOT"]', script)
 
     def test_package_release_script_generates_checksum_asset(self) -> None:
         script = Path("packaging/package_release.ps1").read_text(encoding="utf-8")
 
-        self.assertIn("EFCheck-SHA256.txt", script)
+        self.assertIn("Skport_Signin-SHA256.txt", script)
+
+

@@ -1,9 +1,9 @@
-import json
+﻿import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from efcheck.commands import configure_sites
+from skport_signin.commands import configure_sites
 
 
 class ConfigureSitesTests(unittest.TestCase):
@@ -80,3 +80,5 @@ class ConfigureSitesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

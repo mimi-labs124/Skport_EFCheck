@@ -1,7 +1,7 @@
-import unittest
+﻿import unittest
 
-from efcheck.result_helpers import final_signin_status
-from efcheck.statuses import ALREADY_DONE, ERROR, SUCCESS, UNKNOWN
+from skport_signin.result_helpers import final_signin_status
+from skport_signin.statuses import ALREADY_DONE, ERROR, SUCCESS, UNKNOWN
 
 
 class ResultHelperTests(unittest.TestCase):
@@ -28,3 +28,5 @@ class ResultHelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

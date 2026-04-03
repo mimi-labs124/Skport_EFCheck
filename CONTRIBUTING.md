@@ -1,6 +1,6 @@
-# Contributing
+﻿# Contributing
 
-EFCheck is primarily a Windows automation tool. Contributions should preserve Windows stability first, then source-mode maintainability, then packaging convenience.
+Skport_Signin is primarily a Windows automation tool. Contributions should preserve Windows stability first, then source-mode maintainability, then packaging convenience.
 
 ## Local development
 
@@ -12,7 +12,7 @@ python -m pip install -e ".[dev]"
 Optional browser bootstrap for manual testing:
 
 ```powershell
-python -m efcheck doctor --install-browser
+python -m skport_signin doctor --install-browser
 ```
 
 ## Test commands
@@ -61,6 +61,7 @@ powershell -ExecutionPolicy Bypass -File .\packaging\package_release.ps1
 ## GitHub workflow expectations
 
 - Use the issue templates when filing bugs or feature requests
-- For bug reports, include mode details (`source` or `packaged`, `onedir` or `onefile`) and `efcheck doctor` output
+- For bug reports, include mode details (`source` or `packaged`, `onedir` or `onefile`) and `skport_signin doctor` output
 - Use the PR template and complete checklist items for docs, tests, and mode impact
 - Keep release asset naming aligned with `docs/release.md`
+
