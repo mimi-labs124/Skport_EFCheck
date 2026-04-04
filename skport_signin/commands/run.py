@@ -34,6 +34,8 @@ from skport_signin.statuses import ALREADY_DONE, ERROR, SESSION_EXPIRED, SUCCESS
 from skport_signin.time_helpers import load_timezone
 
 DEFAULT_URL = "https://game.skport.com/endfield/sign-in?header=0&hg_media=skport&hg_link_campaign=tools"
+REFRESH_VERIFICATION_ATTEMPTS = 3
+REFRESH_VERIFICATION_DELAY_MS = 1500
 
 
 @dataclass(frozen=True)
@@ -118,19 +120,11 @@ def run_command(*, runtime: RuntimeContext, dry_run: bool, force: bool) -> int:
 
     for group in group_pending_runs_by_profile(pending_runs):
         if len(group) == 1:
-            pending_run = group[0]
             results = [
-                (
-                    pending_run,
-                    *run_browser_sign_in(
-                        runtime=runtime,
-                        profile_dir=pending_run.profile_dir,
-                        signin_url=pending_run.site.signin_url,
-                        attendance_path=pending_run.site.attendance_path,
-                        headless=settings.headless,
-                        browser_channel=settings.browser_channel,
-                        timeout_seconds=settings.timeout_seconds,
-                    ),
+                run_single_pending_site(
+                    runtime=runtime,
+                    settings=settings,
+                    pending_run=group[0],
                 )
             ]
         else:
@@ -215,20 +209,65 @@ def run_browser_sign_in_group(
                 viewport={"width": 1440, "height": 1200},
             )
             try:
-                return [
-                    (
-                        pending_run,
-                        *run_browser_sign_in_in_context(
+                results = []
+                for pending_run in pending_runs:
+                    results.append(
+                        run_pending_site_in_context(
+                            pending_run=pending_run,
                             context=context,
-                            signin_url=pending_run.site.signin_url,
-                            attendance_path=pending_run.site.attendance_path,
                             timeout_seconds=settings.timeout_seconds,
-                        ),
+                        )
                     )
-                    for pending_run in pending_runs
-                ]
+                return results
             finally:
                 context.close()
+
+
+def run_single_pending_site(
+    *,
+    runtime: RuntimeContext,
+    settings,
+    pending_run: PendingSiteRun,
+) -> tuple[PendingSiteRun, str, str]:
+    try:
+        return (
+            pending_run,
+            *run_browser_sign_in(
+                runtime=runtime,
+                profile_dir=pending_run.profile_dir,
+                signin_url=pending_run.site.signin_url,
+                attendance_path=pending_run.site.attendance_path,
+                headless=settings.headless,
+                browser_channel=settings.browser_channel,
+                timeout_seconds=settings.timeout_seconds,
+            ),
+        )
+    except Exception as exc:
+        return pending_run, format_site_runtime_exception(exc), ERROR
+
+
+def run_pending_site_in_context(
+    *,
+    pending_run: PendingSiteRun,
+    context,
+    timeout_seconds: int,
+) -> tuple[PendingSiteRun, str, str]:
+    try:
+        return (
+            pending_run,
+            *run_browser_sign_in_in_context(
+                context=context,
+                signin_url=pending_run.site.signin_url,
+                attendance_path=pending_run.site.attendance_path,
+                timeout_seconds=timeout_seconds,
+            ),
+        )
+    except Exception as exc:
+        return pending_run, format_site_runtime_exception(exc), ERROR
+
+
+def format_site_runtime_exception(exc: Exception) -> str:
+    return f"ERROR: unhandled runtime exception during sign-in attempt: {exc}"
 
 
 def summarize_browser_run(settings, site: SiteSettings, profile_dir: Path) -> str:
@@ -356,24 +395,18 @@ def run_browser_sign_in_in_context(
                 SESSION_EXPIRED,
             )
         post_seen = post_response.ok
-        with page.expect_response(
-            lambda response: is_attendance_response(
-                response.url,
-                response.request.method,
-                attendance_path,
-            ),
-            timeout=timeout_ms,
-        ) as refreshed_attendance_info:
-            page.reload(wait_until="domcontentloaded")
-        try:
-            attendance_payload = refreshed_attendance_info.value.json()
-        except Exception:
-            pass
-        try:
-            page.wait_for_timeout(2000)
-        except PlaywrightTimeoutError:
-            pass
-        refreshed_state = derive_attendance_state(attendance_payload)
+        attendance_payload, refreshed_state = refresh_attendance_payload_with_retries(
+            page=page,
+            attendance_path=attendance_path,
+            timeout_ms=timeout_ms,
+        )
+
+        if refreshed_state.status == "UNKNOWN" and page_looks_logged_out(page):
+            return (
+                "SESSION_EXPIRED: the sign-in page no longer looks logged in after the "
+                "sign-in click.",
+                SESSION_EXPIRED,
+            )
 
         status, message = final_signin_status(
             day_number=state.day_number or 0,
@@ -399,6 +432,47 @@ def run_browser_sign_in_in_context(
                 close_page()
             except Exception:
                 pass
+
+
+def refresh_attendance_payload_with_retries(
+    *,
+    page,
+    attendance_path: str,
+    timeout_ms: int,
+):
+    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+    attendance_payload = {"code": -1, "data": {"calendar": []}}
+    refreshed_state = derive_attendance_state(attendance_payload)
+
+    for attempt in range(REFRESH_VERIFICATION_ATTEMPTS):
+        with page.expect_response(
+            lambda response: is_attendance_response(
+                response.url,
+                response.request.method,
+                attendance_path,
+            ),
+            timeout=timeout_ms,
+        ) as refreshed_attendance_info:
+            page.reload(wait_until="domcontentloaded")
+        try:
+            attendance_payload = refreshed_attendance_info.value.json()
+        except Exception:
+            attendance_payload = {"code": -1, "data": {"calendar": []}}
+        try:
+            page.wait_for_timeout(2000)
+        except PlaywrightTimeoutError:
+            pass
+        refreshed_state = derive_attendance_state(attendance_payload)
+        if refreshed_state.status == ALREADY_DONE:
+            break
+        if attempt + 1 < REFRESH_VERIFICATION_ATTEMPTS:
+            try:
+                page.wait_for_timeout(REFRESH_VERIFICATION_DELAY_MS)
+            except PlaywrightTimeoutError:
+                pass
+
+    return attendance_payload, refreshed_state
 
 
 def click_day_tile(page, day_number: int | None) -> None:

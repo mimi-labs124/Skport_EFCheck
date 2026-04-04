@@ -241,6 +241,53 @@ class SignInTests(unittest.TestCase):
         self.assertEqual(status, SUCCESS)
         self.assertIn("Day 1", message)
 
+    def test_run_browser_sign_in_retries_refreshed_state_after_successful_post(self) -> None:
+        attendance_payload = {
+            "data": {
+                "calendar": [
+                    {"available": True, "done": False},
+                    {"available": False, "done": False},
+                ]
+            }
+        }
+        unknown_refresh_payload = {"data": {}}
+        refreshed_payload = {
+            "data": {
+                "calendar": [
+                    {"available": False, "done": True},
+                    {"available": False, "done": False},
+                ]
+            }
+        }
+        fake_page = _FakePage(
+            [
+                _FakeResponse(200, attendance_payload, method="GET"),
+                _FakeResponse(200, {}, ok=True, method="POST"),
+                _FakeResponse(200, unknown_refresh_payload, method="GET"),
+                _FakeResponse(200, refreshed_payload, method="GET"),
+            ]
+        )
+        fake_context = _FakeContext(fake_page)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            profile_dir = Path(temp_dir) / "browser-profile"
+            profile_dir.mkdir()
+            with patch.object(sign_in, "click_day_tile"), patch(
+                "playwright.sync_api.sync_playwright",
+                return_value=_FakeSyncPlaywright(_FakePlaywright(fake_context)),
+            ):
+                message, status = sign_in.run_browser_sign_in(
+                    profile_dir=profile_dir,
+                    signin_url="https://example.com",
+                    attendance_path="/web/v1/game/endfield/attendance",
+                    headless=True,
+                    browser_channel="",
+                    timeout_seconds=1,
+                )
+
+        self.assertEqual(status, SUCCESS)
+        self.assertIn("Day 1", message)
+
     def test_main_dry_run_reports_each_enabled_site(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -248,6 +295,7 @@ class SignInTests(unittest.TestCase):
             config_path.write_text(
                 json.dumps(
                     {
+                        "log_dir": "./logs",
                         "sites": [
                             {
                                 "key": "endfield",
@@ -557,7 +605,7 @@ class SignInTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            stderr = io.StringIO()
+            stdout = io.StringIO()
             with patch.object(
                 sign_in,
                 "parse_args",
@@ -566,11 +614,73 @@ class SignInTests(unittest.TestCase):
                 sign_in,
                 "run_browser_sign_in",
                 side_effect=InteractionError("could not click tile"),
-            ), redirect_stderr(stderr):
+            ), redirect_stdout(stdout):
                 exit_code = sign_in.main()
 
         self.assertEqual(exit_code, 10)
-        self.assertIn("Runtime error", stderr.getvalue())
+        self.assertIn(
+            "ERROR: unhandled runtime exception during sign-in attempt: could not click tile",
+            stdout.getvalue(),
+        )
+
+    def test_main_continues_after_site_runtime_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "sites": [
+                            {
+                                "key": "endfield",
+                                "name": "Endfield",
+                                "signin_url": "https://game.skport.com/endfield/sign-in",
+                                "attendance_path": "/web/v1/game/endfield/attendance",
+                                "state_path": "./endfield-state.json",
+                                "browser_profile_dir": "./endfield-profile",
+                            },
+                            {
+                                "key": "arknights",
+                                "name": "Arknights",
+                                "signin_url": "https://game.skport.com/arknights/sign-in",
+                                "attendance_path": "/api/v1/game/attendance",
+                                "state_path": "./arknights-state.json",
+                                "browser_profile_dir": "./arknights-profile",
+                            },
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+
+            def fake_run_browser_sign_in(**kwargs):
+                if kwargs["attendance_path"] == "/web/v1/game/endfield/attendance":
+                    raise RuntimeError("boom")
+                return "SUCCESS: mocked.", SUCCESS
+
+            with patch.object(
+                sign_in,
+                "parse_args",
+                return_value=Namespace(config=str(config_path), dry_run=False, force=True),
+            ), patch.object(sign_in, "load_timezone", return_value=timezone.utc), patch.object(
+                sign_in,
+                "run_browser_sign_in",
+                side_effect=fake_run_browser_sign_in,
+            ), patch.object(
+                sign_in,
+                "notify_status",
+                return_value=None,
+            ), redirect_stdout(stdout):
+                exit_code = sign_in.main()
+
+        self.assertEqual(exit_code, 10)
+        output = stdout.getvalue()
+        self.assertIn(
+            "[Endfield] ERROR: unhandled runtime exception during sign-in attempt: boom",
+            output,
+        )
+        self.assertIn("[Arknights] SUCCESS: mocked.", output)
 
     def test_page_looks_logged_out_does_not_treat_account_text_as_login(self) -> None:
         page = _FakePage([])
