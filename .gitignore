@@ -31,3 +31,6 @@ tools/prepare_public_repo.ps1
 *.sqlite
 *.db
 *.zip
+
+docs/superpowers/
+docs/*.png
