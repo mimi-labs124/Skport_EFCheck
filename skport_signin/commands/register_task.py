@@ -6,7 +6,7 @@ from pathlib import Path
 
 from skport_signin.runtime import RuntimeContext
 
-DEFAULT_TASK_NAME = "SKPORT Sign-in"
+DEFAULT_TASK_NAME = "Skport_Signin Sign-In"
 
 
 def register_parser(subparsers) -> None:

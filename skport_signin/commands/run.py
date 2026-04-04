@@ -18,7 +18,6 @@ from skport_signin.browser_helpers import (
 from skport_signin.config import SiteSettings, load_runtime_settings, resolve_path
 from skport_signin.daily_gate import (
     RunGateState,
-    load_state,
     mark_attempt,
     should_run_today,
 )
@@ -88,7 +87,6 @@ def run_command(*, runtime: RuntimeContext, dry_run: bool, force: bool) -> int:
 
         state_path = resolve_path(config_path, site.state_path)
         profile_dir = resolve_path(config_path, site.browser_profile_dir)
-        previous_state = load_state(state_path)
 
         if not force:
             allowed, previous_state = should_run_today(state_path, today)
@@ -149,7 +147,7 @@ def run_command(*, runtime: RuntimeContext, dry_run: bool, force: bool) -> int:
                 f"SKPORT Sign-in session expired: {pending_run.site.name}",
                 (
                     f"The saved sign-in session for {pending_run.site.name} needs to be refreshed. "
-                    f"Run capture_session.bat --site {pending_run.site.key}."
+                    f"Run: skport_signin capture-session --site {pending_run.site.key}"
                 ),
             )
             if notification_warning:
@@ -187,7 +185,8 @@ def run_browser_sign_in_group(
     profile_dir = pending_runs[0].profile_dir
     if not profile_dir.exists():
         raise FileNotFoundError(
-            f"Browser profile not found at {profile_dir}. Run capture_session.py first."
+            f"Browser profile not found at {profile_dir}. "
+            "Run 'skport_signin capture-session' first."
         )
 
     try:
@@ -293,7 +292,8 @@ def run_browser_sign_in(
 ) -> tuple[str, str]:
     if not profile_dir.exists():
         raise FileNotFoundError(
-            f"Browser profile not found at {profile_dir}. Run capture_session.py first."
+            f"Browser profile not found at {profile_dir}. "
+            "Run 'skport_signin capture-session' first."
         )
 
     try:
