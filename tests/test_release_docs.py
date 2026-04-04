@@ -42,4 +42,32 @@ class ReleaseDocsTests(unittest.TestCase):
         self.assertIn("python -m skport_signin package onedir", ci_text)
         self.assertIn("skport_signin.exe --help", ci_text)
 
+    def test_package_version_matches_pyproject_toml(self) -> None:
+        import skport_signin
+
+        pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+        for line in pyproject.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("version"):
+                pyproject_version = stripped.split("=", 1)[1].strip().strip('"')
+                break
+        else:
+            self.fail("No version found in pyproject.toml")
+
+        self.assertEqual(
+            skport_signin.__version__,
+            pyproject_version,
+            "__init__.__version__ must match pyproject.toml version",
+        )
+
+    def test_register_task_name_matches_powershell_script_default(self) -> None:
+        from skport_signin.commands.register_task import DEFAULT_TASK_NAME
+
+        ps1_text = Path("register_logon_task.ps1").read_text(encoding="utf-8")
+        self.assertIn(
+            DEFAULT_TASK_NAME,
+            ps1_text,
+            "Python DEFAULT_TASK_NAME must match PowerShell script default",
+        )
+
 

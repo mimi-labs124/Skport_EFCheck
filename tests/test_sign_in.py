@@ -367,9 +367,11 @@ class SignInTests(unittest.TestCase):
             captured_state_paths = []
             captured_attendance_paths = []
 
-            def fake_load_state(path):
+            original_mark_attempt = sign_in.mark_attempt
+
+            def fake_mark_attempt(path, state):
                 captured_state_paths.append(path.name)
-                return sign_in.RunGateState()
+                original_mark_attempt(path, state)
 
             def fake_run_browser_sign_in(**kwargs):
                 captured_attendance_paths.append(kwargs["attendance_path"])
@@ -381,8 +383,8 @@ class SignInTests(unittest.TestCase):
                 return_value=Namespace(config=str(config_path), dry_run=False, force=True),
             ), patch.object(sign_in, "load_timezone", return_value=timezone.utc), patch.object(
                 sign_in,
-                "load_state",
-                side_effect=fake_load_state,
+                "mark_attempt",
+                side_effect=fake_mark_attempt,
             ), patch.object(
                 sign_in,
                 "run_browser_sign_in",
@@ -553,7 +555,7 @@ class SignInTests(unittest.TestCase):
                 "parse_args",
                 return_value=Namespace(config=str(config_path), dry_run=False, force=False),
             ), patch.object(sign_in, "load_timezone", return_value=timezone.utc), patch.object(
-                sign_in, "load_state", side_effect=StateFileError("broken state")
+                sign_in, "should_run_today", side_effect=StateFileError("broken state")
             ), redirect_stderr(stderr):
                 exit_code = sign_in.main()
 
@@ -746,6 +748,21 @@ class SignInTests(unittest.TestCase):
             sign_in.click_day_tile(page, 9)
 
         self.assertTrue(text_locator.clicked)
+
+    def test_missing_profile_error_references_unified_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            missing_profile = Path(temp_dir) / "nonexistent-profile"
+            with self.assertRaises(FileNotFoundError) as cm:
+                sign_in.run_browser_sign_in(
+                    profile_dir=missing_profile,
+                    signin_url="https://example.com",
+                    attendance_path="/web/v1/game/endfield/attendance",
+                    headless=True,
+                    browser_channel="",
+                    timeout_seconds=1,
+                )
+            self.assertIn("skport_signin capture-session", str(cm.exception))
+            self.assertNotIn("capture_session.py", str(cm.exception))
 
 
 if __name__ == "__main__":
