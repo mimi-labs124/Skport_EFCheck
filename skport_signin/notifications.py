@@ -27,13 +27,13 @@ def show_windows_notification(title: str, message: str) -> str | None:
         "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Drawing');"
         "$notify = New-Object System.Windows.Forms.NotifyIcon;"
         "$notify.Icon = [System.Drawing.SystemIcons]::Warning;"
-        "$notify.BalloonTipTitle = '{title}';"
-        "$notify.BalloonTipText = '{message}';"
+        "$notify.BalloonTipTitle = '" + escaped_title + "';"
+        "$notify.BalloonTipText = '" + escaped_message + "';"
         "$notify.Visible = $true;"
         "$notify.ShowBalloonTip(10000);"
         "Start-Sleep -Seconds 6;"
         "$notify.Dispose();"
-    ).format(title=escaped_title, message=escaped_message)
+    )
     try:
         result = subprocess.run(
             [

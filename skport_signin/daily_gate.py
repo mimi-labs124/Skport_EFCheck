@@ -6,6 +6,7 @@ from pathlib import Path
 
 from skport_signin.errors import StateFileError
 from skport_signin.file_io import write_text_atomic
+from skport_signin.statuses import TERMINAL_STATUSES
 
 
 @dataclass
@@ -19,7 +20,7 @@ def should_run_today(state_path: Path, today: str) -> tuple[bool, RunGateState]:
     state = load_state(state_path)
     if state.last_attempt_date != today:
         return True, state
-    if state.last_status in {"SUCCESS", "ALREADY_DONE"}:
+    if state.last_status in TERMINAL_STATUSES:
         return False, state
     return True, state
 

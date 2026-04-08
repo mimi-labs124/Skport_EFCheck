@@ -358,7 +358,7 @@ def run_browser_sign_in_in_context(
             )
         try:
             attendance_payload = attendance_response.json()
-        except Exception:
+        except (ValueError, TypeError):
             attendance_payload = {"code": -1, "data": {"calendar": []}}
         page.wait_for_timeout(2000)
 
@@ -457,7 +457,7 @@ def refresh_attendance_payload_with_retries(
             page.reload(wait_until="domcontentloaded")
         try:
             attendance_payload = refreshed_attendance_info.value.json()
-        except Exception:
+        except (ValueError, TypeError):
             attendance_payload = {"code": -1, "data": {"calendar": []}}
         try:
             page.wait_for_timeout(2000)

@@ -36,7 +36,7 @@ def build_runtime_context(
             config_override=config_override,
             base_dir_override=base_dir_override,
         ),
-        stdout=resolved_stdout or _NullTextIO(),
-        stderr=resolved_stderr or _NullTextIO(),
+        stdout=resolved_stdout if resolved_stdout is not None else _NullTextIO(),
+        stderr=resolved_stderr if resolved_stderr is not None else _NullTextIO(),
     )
 

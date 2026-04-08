@@ -102,7 +102,10 @@ def _parse_sites(data: dict, default_url: str) -> list[SiteSettings]:
         return [
             SiteSettings(
                 key=ENDFIELD_KEY,
-                name=next(site.name for site in KNOWN_SITES if site.key == ENDFIELD_KEY),
+                name=next(
+                    (site.name for site in KNOWN_SITES if site.key == ENDFIELD_KEY),
+                    ENDFIELD_KEY.title(),
+                ),
                 signin_url=signin_url,
                 attendance_path=_parse_string(
                     data.get("attendance_path", derive_attendance_path(signin_url)),
