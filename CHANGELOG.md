@@ -7,6 +7,14 @@ The format is based on Keep a Changelog and uses a simple `major.minor.patch` ve
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-04-11
+
+### Fixed
+
+- Added Windows notifications for general sign-in failures, so failed runs no longer stay silent when the result is `ERROR`
+- Expanded sign-in log entries with per-site start markers and resolved site details to make scheduled-run failures easier to diagnose
+- Included exception type names and final page URLs in more failure messages to improve troubleshooting from logs alone
+
 ## [0.4.2] - 2026-04-10
 
 ### Fixed

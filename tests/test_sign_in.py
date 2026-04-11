@@ -11,7 +11,7 @@ from unittest.mock import patch
 from skport_signin.commands import run as sign_in
 from skport_signin.errors import InteractionError, StateFileError
 from skport_signin.runtime import build_runtime_context
-from skport_signin.statuses import SUCCESS
+from skport_signin.statuses import ERROR, SUCCESS
 
 
 class _FakeResponse:
@@ -622,7 +622,10 @@ class SignInTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 10)
         self.assertIn(
-            "ERROR: unhandled runtime exception during sign-in attempt: could not click tile",
+            (
+                "ERROR: unhandled runtime exception during sign-in attempt: "
+                "InteractionError: could not click tile"
+            ),
             stdout.getvalue(),
         )
 
@@ -680,7 +683,10 @@ class SignInTests(unittest.TestCase):
         self.assertEqual(exit_code, 10)
         output = stdout.getvalue()
         self.assertIn(
-            "[Endfield] ERROR: unhandled runtime exception during sign-in attempt: boom",
+            (
+                "[Endfield] ERROR: unhandled runtime exception during sign-in attempt: "
+                "RuntimeError: boom"
+            ),
             output,
         )
         self.assertIn("[Arknights] SUCCESS: mocked.", output)
@@ -741,6 +747,58 @@ class SignInTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertEqual(endfield_state["last_status"], SUCCESS)
             self.assertEqual(arknights_state["last_status"], SUCCESS)
+
+    def test_run_command_logs_site_started_and_site_details(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "settings.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "log_dir": "./logs",
+                        "sites": [
+                            {
+                                "key": "endfield",
+                                "name": "Endfield",
+                                "signin_url": "https://game.skport.com/endfield/sign-in",
+                                "attendance_path": "/web/v1/game/endfield/attendance",
+                                "state_path": "./endfield-state.json",
+                                "browser_profile_dir": "./endfield-profile",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            runtime = build_runtime_context(
+                config_override=str(config_path),
+                stdout=io.StringIO(),
+                stderr=io.StringIO(),
+            )
+            (root / "endfield-profile").mkdir()
+
+            with patch.object(sign_in, "load_timezone", return_value=timezone.utc), patch.object(
+                sign_in,
+                "run_browser_sign_in",
+                return_value=("ERROR: mocked failure", ERROR),
+            ), patch.object(
+                sign_in,
+                "notify_status",
+                return_value=None,
+            ):
+                exit_code = sign_in.run_command(runtime=runtime, dry_run=False, force=True)
+
+            log_dir = root / "logs"
+            log_file = next(log_dir.glob("signin-*.log"))
+            log_text = log_file.read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 10)
+        self.assertIn("SITE_STARTED [Endfield] Starting sign-in attempt.", log_text)
+        self.assertIn("profile_dir=", log_text)
+        self.assertIn("signin_url=", log_text)
+        self.assertIn("attendance_path=", log_text)
+        self.assertIn("ERROR [Endfield] ERROR: mocked failure", log_text)
 
     def test_page_looks_logged_out_does_not_treat_account_text_as_login(self) -> None:
         page = _FakePage([])

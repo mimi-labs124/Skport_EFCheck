@@ -98,13 +98,25 @@ def run_command(*, runtime: RuntimeContext, dry_run: bool, force: bool) -> int:
                         f"with status {previous_state.last_status}."
                     ),
                 )
-                write_log(log_dir, now, "SKIPPED_ALREADY_ATTEMPTED", message)
+                write_log(
+                    log_dir,
+                    now,
+                    "SKIPPED_ALREADY_ATTEMPTED",
+                    message,
+                    details=site_log_details(site=site, profile_dir=profile_dir),
+                )
                 runtime.stdout.write(message + "\n")
                 continue
 
         if dry_run:
             message = summarize_browser_run(settings, site, profile_dir)
-            write_log(log_dir, now, "DRY_RUN", message)
+            write_log(
+                log_dir,
+                now,
+                "DRY_RUN",
+                message,
+                details=site_log_details(site=site, profile_dir=profile_dir),
+            )
             runtime.stdout.write(message + "\n")
             continue
 
@@ -117,6 +129,17 @@ def run_command(*, runtime: RuntimeContext, dry_run: bool, force: bool) -> int:
         )
 
     for group in group_pending_runs_by_profile(pending_runs):
+        for pending_run in group:
+            write_log(
+                log_dir,
+                datetime.now(timezone),
+                "SITE_STARTED",
+                prefix_site_message(pending_run.site, "Starting sign-in attempt."),
+                details=site_log_details(
+                    site=pending_run.site,
+                    profile_dir=pending_run.profile_dir,
+                ),
+            )
         if len(group) == 1:
             results = [
                 run_single_pending_site(
@@ -141,21 +164,31 @@ def run_command(*, runtime: RuntimeContext, dry_run: bool, force: bool) -> int:
                     updated_at=now.isoformat(),
                 ),
             )
-            write_log(log_dir, now, status, prefixed_message)
-            notification_warning = notify_status(
+            write_log(
+                log_dir,
+                now,
                 status,
-                f"SKPORT Sign-in session expired: {pending_run.site.name}",
-                (
-                    f"The saved sign-in session for {pending_run.site.name} needs to be refreshed. "
-                    f"Run: skport_signin capture-session --site {pending_run.site.key}"
+                prefixed_message,
+                details=site_log_details(
+                    site=pending_run.site,
+                    profile_dir=pending_run.profile_dir,
                 ),
             )
+            notification_title, notification_message = build_notification_content(
+                pending_run=pending_run,
+                status=status,
+            )
+            notification_warning = notify_status(status, notification_title, notification_message)
             if notification_warning:
                 write_log(
                     log_dir,
                     now,
                     "NOTIFICATION_WARNING",
                     prefix_site_message(pending_run.site, notification_warning),
+                    details=site_log_details(
+                        site=pending_run.site,
+                        profile_dir=pending_run.profile_dir,
+                    ),
                 )
             runtime.stdout.write(prefixed_message + "\n")
             if status not in {SUCCESS, ALREADY_DONE}:
@@ -266,7 +299,33 @@ def run_pending_site_in_context(
 
 
 def format_site_runtime_exception(exc: Exception) -> str:
-    return f"ERROR: unhandled runtime exception during sign-in attempt: {exc}"
+    return (
+        "ERROR: unhandled runtime exception during sign-in attempt: "
+        f"{type(exc).__name__}: {exc}"
+    )
+
+
+def build_notification_content(
+    *,
+    pending_run: PendingSiteRun,
+    status: str,
+) -> tuple[str, str]:
+    if status == SESSION_EXPIRED:
+        return (
+            f"SKPORT Sign-in session expired: {pending_run.site.name}",
+            (
+                f"The saved sign-in session for {pending_run.site.name} needs to be refreshed. "
+                f"Run: skport_signin capture-session --site {pending_run.site.key}"
+            ),
+        )
+    return (
+        f"SKPORT Sign-in failed: {pending_run.site.name}",
+        (
+            f"{pending_run.site.name} sign-in did not complete successfully. "
+            f"Check the latest sign-in log and refresh the session if needed. "
+            f"Run: skport_signin capture-session --site {pending_run.site.key}"
+        ),
+    )
 
 
 def summarize_browser_run(settings, site: SiteSettings, profile_dir: Path) -> str:
@@ -354,7 +413,8 @@ def run_browser_sign_in_in_context(
         if attendance_response.status in {401, 403}:
             return (
                 "SESSION_EXPIRED: the attendance endpoint rejected the "
-                "saved browser session.",
+                f"saved browser session. response_status={attendance_response.status} "
+                f"final_url={safe_page_url(page)}",
                 SESSION_EXPIRED,
             )
         try:
@@ -373,12 +433,13 @@ def run_browser_sign_in_in_context(
         if state.status == "UNKNOWN":
             if page_looks_logged_out(page):
                 return (
-                    "SESSION_EXPIRED: the browser profile no longer looks logged in.",
+                    "SESSION_EXPIRED: the browser profile no longer looks logged in. "
+                    f"final_url={safe_page_url(page)}",
                     SESSION_EXPIRED,
                 )
             return (
                 "ERROR: the attendance payload did not include a "
-                "calendar, so the run could not be verified.",
+                f"calendar, so the run could not be verified. final_url={safe_page_url(page)}",
                 ERROR,
             )
 
@@ -392,7 +453,8 @@ def run_browser_sign_in_in_context(
         if post_response.status in {401, 403}:
             return (
                 "SESSION_EXPIRED: the sign-in click was rejected because "
-                "the saved session is no longer valid.",
+                f"the saved session is no longer valid. response_status={post_response.status} "
+                f"final_url={safe_page_url(page)}",
                 SESSION_EXPIRED,
             )
         post_seen = post_response.ok
@@ -405,7 +467,7 @@ def run_browser_sign_in_in_context(
         if refreshed_state.status == "UNKNOWN" and page_looks_logged_out(page):
             return (
                 "SESSION_EXPIRED: the sign-in page no longer looks logged in after the "
-                "sign-in click.",
+                f"sign-in click. final_url={safe_page_url(page)}",
                 SESSION_EXPIRED,
             )
 
@@ -419,11 +481,12 @@ def run_browser_sign_in_in_context(
         if page_looks_logged_out(page):
             return (
                 "SESSION_EXPIRED: no attendance response arrived and the "
-                "page appears to be logged out.",
+                f"page appears to be logged out. final_url={safe_page_url(page)}",
                 SESSION_EXPIRED,
             )
         return (
-            "ERROR: timed out while waiting for attendance responses from the page.",
+            "ERROR: timed out while waiting for attendance responses from the page. "
+            f"final_url={safe_page_url(page)}",
             ERROR,
         )
     finally:
@@ -534,13 +597,39 @@ def page_has_login_form(page) -> bool:
             continue
     return False
 
+
+def safe_page_url(page) -> str:
+    try:
+        return str(page.url)
+    except Exception:
+        return "<unavailable>"
+
 def prefix_site_message(site: SiteSettings, message: str) -> str:
     return f"[{site.name}] {message}"
 
 
-def write_log(log_dir: Path, now: datetime, status: str, message: str) -> None:
+def site_log_details(*, site: SiteSettings, profile_dir: Path) -> dict[str, str]:
+    return {
+        "site_key": site.key,
+        "profile_dir": str(profile_dir),
+        "signin_url": site.signin_url,
+        "attendance_path": site.attendance_path,
+    }
+
+
+def write_log(
+    log_dir: Path,
+    now: datetime,
+    status: str,
+    message: str,
+    *,
+    details: dict[str, str] | None = None,
+) -> None:
     log_file = log_dir / f"signin-{now.date().isoformat()}.log"
-    entry = f"[{now.isoformat()}] {status} {message}\n"
+    detail_text = ""
+    if details:
+        detail_text = "".join(f" | {key}={value}" for key, value in details.items())
+    entry = f"[{now.isoformat()}] {status} {message}{detail_text}\n"
     with log_file.open("a", encoding="utf-8") as handle:
         handle.write(entry)
 
