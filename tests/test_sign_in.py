@@ -197,6 +197,30 @@ class _FakeSyncPlaywright:
 
 
 class SignInTests(unittest.TestCase):
+    def test_build_notification_content_uses_current_site_for_error(self) -> None:
+        pending_run = sign_in.PendingSiteRun(
+            site=sign_in.SiteSettings(
+                key="arknights",
+                name="Arknights",
+                signin_url="https://game.skport.com/arknights/sign-in",
+                attendance_path="/web/v1/game/arknights/attendance",
+                state_path=Path("state/arknights-last_run.json"),
+                browser_profile_dir=Path("state/browser-profile"),
+                enabled=True,
+            ),
+            profile_dir=Path("state/browser-profile"),
+            state_path=Path("state/arknights-last_run.json"),
+        )
+
+        title, message = sign_in.build_notification_content(
+            pending_run=pending_run,
+            status=ERROR,
+        )
+
+        self.assertEqual(title, "SKPORT Sign-in failed: Arknights")
+        self.assertIn("Arknights sign-in did not complete successfully.", message)
+        self.assertIn("skport_signin capture-session --site arknights", message)
+
     def test_run_browser_sign_in_returns_message_then_status_on_success(self) -> None:
         attendance_payload = {
             "data": {
